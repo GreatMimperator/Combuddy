@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import ru.combuddy.backend.entities.complain.post.PostComplaintJudgment;
 import ru.combuddy.backend.entities.complain.post.PostComplaint;
 import ru.combuddy.backend.entities.complain.user.UserComplaint;
@@ -15,15 +16,28 @@ import ru.combuddy.backend.entities.messaging.PublicMessage;
 import ru.combuddy.backend.entities.post.FavoritePost;
 import ru.combuddy.backend.entities.post.Post;
 import ru.combuddy.backend.entities.tag.UserHomeTag;
+import ru.combuddy.backend.security.entities.UserBaseAuth;
+import ru.combuddy.backend.security.entities.Role;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
+@NoArgsConstructor
 @Entity
 @JsonPropertyOrder({"id", "username", "frozen", "userInfo"})
 public class UserAccount {
     public static final int MIN_USERNAME_LENGTH = 5;
     public static final int MAX_USERNAME_LENGTH = 35;
+
+    public UserAccount(Long id) {
+        this.id = id;
+    }
+
+    public UserAccount(String username) {
+        this((Long) null);
+        setUsername(username);
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,6 +57,15 @@ public class UserAccount {
 
     @OneToOne(cascade = CascadeType.ALL, optional = false, fetch = FetchType.LAZY, mappedBy = "userAccount")
     private UserInfo userInfo;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "userAccount")
+    private UserBaseAuth baseAuth;
+
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinTable(name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "owner")
     private List<UserContact> contacts;

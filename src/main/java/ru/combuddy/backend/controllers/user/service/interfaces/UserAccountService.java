@@ -2,15 +2,15 @@ package ru.combuddy.backend.controllers.user.service.interfaces;
 
 import ru.combuddy.backend.controllers.user.models.User;
 import ru.combuddy.backend.entities.user.UserAccount;
+import ru.combuddy.backend.exceptions.AlreadyExistsException;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface UserAccountService {
-    /**
-     * @return false if not unique username, true if created
-     */
-    boolean createUser(User user);
+    User createUser(User user) throws AlreadyExistsException;
+
+    UserAccount createDefaultUser(String username) throws AlreadyExistsException;
 
     Optional<UserAccount> findByUsername(String username);
 

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -11,6 +12,7 @@ import ru.combuddy.backend.controllers.user.models.UsernamesList;
 import ru.combuddy.backend.controllers.user.models.User;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
+import ru.combuddy.backend.exceptions.AlreadyExistsException;
 
 import java.io.IOException;
 
@@ -18,8 +20,9 @@ import java.io.IOException;
 @RequestMapping("/api/user/account")
 @AllArgsConstructor
 public class UserAccountController {
-    private UserInfoService userInfoService;
-    private UserAccountService userAccountService;
+
+    private final UserInfoService userInfoService;
+    private final UserAccountService userAccountService;
 
     @PostMapping(value = "/create",
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE,
@@ -31,8 +34,9 @@ public class UserAccountController {
                     "User with this username already exist"); // to not perform computations
         }
         userInfoService.addFullAndThumbnailPictures(user, imageMultipartFile);
-        var created = userAccountService.createUser(user);
-        if (!created) {
+        try {
+            userAccountService.createUser(user);
+        } catch (AlreadyExistsException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "User with this username already exist");
         }

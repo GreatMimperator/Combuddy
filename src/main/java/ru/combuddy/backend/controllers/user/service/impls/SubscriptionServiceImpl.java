@@ -17,6 +17,7 @@ import static ru.combuddy.backend.controllers.user.service.impls.UserAccountServ
 @Transactional
 @AllArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
+
     private SubscriptionRepository subscriptionRepository;
     private UserAccountService userAccountService;
 

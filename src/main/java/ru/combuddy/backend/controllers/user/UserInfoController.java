@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.user.projections.info.PublicInfoUserInfoProjection;
-import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
 
 @RestController
 @RequestMapping("/api/user/info")
 @AllArgsConstructor
 public class UserInfoController {
-    private UserInfoService userInfoService;
+
+    private final UserInfoService userInfoService;
 
     @GetMapping("/publicInfo/{username}")
     public PublicInfoUserInfoProjection getPublicInfo(@PathVariable String username) {

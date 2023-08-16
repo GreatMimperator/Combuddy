@@ -6,12 +6,15 @@ import org.springframework.stereotype.Service;
 import ru.combuddy.backend.controllers.user.models.User;
 import ru.combuddy.backend.controllers.user.projections.account.UsernameOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
+import ru.combuddy.backend.entities.user.Subscription;
 import ru.combuddy.backend.entities.user.UserAccount;
+import ru.combuddy.backend.exceptions.AlreadyExistsException;
 import ru.combuddy.backend.repositories.user.UserAccountRepository;
 import ru.combuddy.backend.repositories.user.UserInfoRepository;
+import ru.combuddy.backend.security.entities.Role;
+import ru.combuddy.backend.security.repositories.RoleRepository;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 
 @Service
@@ -19,20 +22,33 @@ import java.util.function.Function;
 @AllArgsConstructor
 public class UserAccountServiceImpl implements UserAccountService {
 
-    private UserAccountRepository userAccountRepository;
-    private UserInfoRepository userInfoRepository;
+    private final UserAccountRepository userAccountRepository;
+    private final RoleRepository roleRepository;
+    private final UserInfoRepository userInfoRepository;
 
     @Override
-    public boolean createUser(User user) {
+    public User createUser(User user) throws AlreadyExistsException {
         var username = user.getUserAccount().getUsername();
         var foundUserAccount = userAccountRepository.findByUsername(username);
         if (foundUserAccount.isPresent()) {
-            return false;
+            throw new AlreadyExistsException("User account with username %s already exists".formatted(username));
         }
         var userAccount = userAccountRepository.save(user.getUserAccount());
         user.getUserInfo().setUserAccount(userAccount);
-        userInfoRepository.save(user.getUserInfo());
-        return true;
+        var userInfo = userInfoRepository.save(user.getUserInfo());
+        return new User(userAccount, userInfo);
+    }
+
+    @Override
+    public UserAccount createDefaultUser(String username) throws AlreadyExistsException {
+        if (userAccountRepository.existsByUsername(username)) {
+            throw new AlreadyExistsException("User with username %s already exists".formatted(username));
+        }
+        var userAccount = new UserAccount(username);
+        var roles = new HashSet<Role>();
+        roles.add(roleRepository.findByName("ROLE_USER").get());
+        userAccount.setRoles(roles);
+        return userAccountRepository.save(userAccount);
     }
 
     @Override

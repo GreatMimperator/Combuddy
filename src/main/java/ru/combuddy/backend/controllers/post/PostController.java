@@ -3,6 +3,7 @@ package ru.combuddy.backend.controllers.post;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.post.models.PostCreationData;
