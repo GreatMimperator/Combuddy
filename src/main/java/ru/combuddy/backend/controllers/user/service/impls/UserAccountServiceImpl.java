@@ -85,6 +85,11 @@ public class UserAccountServiceImpl implements UserAccountService {
                 .toList();
     }
 
+    @Override
+    public boolean isFrozen(String username) {
+        return userAccountRepository.findFrozenByUsername(username).getFrozen();
+    }
+
     public static <Returned>Optional<List<String>> getUsernamesWithAskerExistenceCheck(
             Function<Returned, String> returnedToUsernameConverter,
             List<Returned> returnedList,

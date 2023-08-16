@@ -27,4 +27,6 @@ public interface UserAccountService {
     boolean delete(String username);
 
     List<String> findUsernamesStartedWith(String usernameBeginPart);
+
+    boolean isFrozen(String username);
 }

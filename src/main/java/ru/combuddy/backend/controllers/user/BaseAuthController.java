@@ -27,7 +27,6 @@ public class BaseAuthController {
 
     private final UserAccountService userAccountService;
     private final UserBaseAuthService userBaseAuthService;
-    private final EntityManager entityManager;
 
     @PostMapping("/register/{username}")
     @ResponseStatus(HttpStatus.CREATED)

@@ -1,13 +1,13 @@
 INSERT INTO user_account(username, frozen)
 VALUES
-    ('user', false),
+    ('random_user', false),
     ('moderator', false),
-    ('main_moderator', true);
+    ('main_moderator', false);
 
 -- CREATE EXTENSION pgcrypto; before execution for gen_salt function
 INSERT INTO user_base_auth(user_id, encrypted_password)
 VALUES
-    (1, crypt('user_password', gen_salt('bf'))),
+    (1, crypt('random_user_password', gen_salt('bf'))),
     (2, crypt('moderator_password', gen_salt('bf'))),
     (3, crypt('main_moderator_password', gen_salt('bf')));
 

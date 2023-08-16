@@ -24,6 +24,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
+import ru.combuddy.backend.repositories.user.UserAccountRepository;
+import ru.combuddy.backend.security.JwtLockableAuthenticationProvider;
 
 @Configuration
 @EnableMethodSecurity
@@ -31,7 +34,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @AllArgsConstructor
 public class SecurityConfig {
 
-//    private final JwtTokenFilter jwtTokenFilter;
+    private final UserAccountService userAccountService;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -49,9 +52,9 @@ public class SecurityConfig {
 
     @Bean("jwtTokenProvider")
     public AuthenticationProvider jwtTokenProvider(JwtDecoder jwtDecoder, JwtAuthenticationConverter jwtAuthenticationConverter) {
-        var jwtAuthenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
-        jwtAuthenticationProvider.setJwtAuthenticationConverter(jwtAuthenticationConverter);
-        return jwtAuthenticationProvider;
+        var jwtLockableAuthenticationProvider = new JwtLockableAuthenticationProvider(jwtDecoder, userAccountService::isFrozen);
+        jwtLockableAuthenticationProvider.setJwtAuthenticationConverter(jwtAuthenticationConverter);
+        return jwtLockableAuthenticationProvider;
     }
 
     @Bean("usernamePasswordProvider")

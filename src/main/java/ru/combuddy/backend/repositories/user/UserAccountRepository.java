@@ -1,6 +1,7 @@
 package ru.combuddy.backend.repositories.user;
 
 import org.springframework.data.repository.CrudRepository;
+import ru.combuddy.backend.controllers.user.projections.account.FrozenOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.projections.account.UsernameOnlyUserAccountProjection;
 import ru.combuddy.backend.entities.user.UserAccount;
 
@@ -15,4 +16,6 @@ public interface UserAccountRepository extends CrudRepository<UserAccount, Long>
     int deleteByUsername(String username);
 
     List<UsernameOnlyUserAccountProjection> findByUsernameStartingWith(String usernameBeginPart);
+
+    FrozenOnlyUserAccountProjection findFrozenByUsername(String username);
 }
