@@ -59,13 +59,14 @@ public class UserBaseAuthServiceImpl implements UserBaseAuthService {
         return generateLoginResponse(username, roles);
     }
 
-    private LoginResponse generateLoginResponse(String username, Collection<Role> roles) {
+    @Override
+    public LoginResponse generateLoginResponse(String username, Collection<Role> roles) {
         var authorities = roles.stream()
                 .map(Role::getName)
                 .map(SimpleGrantedAuthority::new)
                 .toList();
         var accessToken = tokenService.generateAccessToken(username, authorities);
-        var refreshToken = tokenService.generateRefreshToken(username, authorities);
+        var refreshToken = tokenService.generateRefreshToken(username);
         return new LoginResponse(accessToken, refreshToken);
     }
 }

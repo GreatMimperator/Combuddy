@@ -55,6 +55,9 @@ public class UserAccount {
     @Column(nullable = false)
     private Boolean frozen = false;
 
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "userAccount")
+    private Set<UserAccountRoles> userAccountRoles;
+
     @OneToOne(cascade = CascadeType.ALL, optional = false, fetch = FetchType.LAZY, mappedBy = "userAccount")
     private UserInfo userInfo;
 

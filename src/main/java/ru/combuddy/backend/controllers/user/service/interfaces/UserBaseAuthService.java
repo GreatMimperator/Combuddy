@@ -27,4 +27,6 @@ public interface UserBaseAuthService {
      * @throws AuthenticationException thrown inside by {@link AuthenticationManager#authenticate(Authentication)}
      */
     LoginResponse login(String username, Collection<Role> roles, String password) throws AuthenticationException;
+
+    LoginResponse generateLoginResponse(String username, Collection<Role> roles);
 }

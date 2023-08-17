@@ -1,55 +1,76 @@
 package ru.combuddy.backend.security;
 
-import com.nimbusds.jwt.SignedJWT;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import ru.combuddy.backend.security.entities.WorkingRefreshToken;
+import ru.combuddy.backend.security.repositories.WorkingRefreshTokenRepository;
 
-import java.text.ParseException;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 public class TokenService {
 
     private final JwtEncoder jwtEncoder;
+    private final WorkingRefreshTokenRepository workingRefreshTokenRepository;
+    private final EntityManager entityManager;
 
-    @Value("${jwt.accessToken.expiresInHours}")
-    private Long accessTokenExpiresInHours;
-    @Value("${jwt.refreshToken.expiresInHours}")
-    private Long refreshTokenExpiresInHours;
-
-    public TokenService(JwtEncoder jwtEncoder) {
+    public TokenService(JwtEncoder jwtEncoder,
+                        WorkingRefreshTokenRepository workingRefreshTokenRepository,
+                        EntityManager entityManager) {
         this.jwtEncoder = jwtEncoder;
+        this.workingRefreshTokenRepository = workingRefreshTokenRepository;
+        this.entityManager = entityManager;
     }
+
+    @Value("${jwt.accessToken.expiresInSeconds}")
+    private Long accessTokenExpiresInSeconds;
+    @Value("${jwt.refreshToken.expiresInSeconds}")
+    private Long refreshTokenExpiresInSeconds;
 
     public String generateAccessToken(String username, Collection<? extends GrantedAuthority> authorities) {
-        return generateToken(username, authorities, accessTokenExpiresInHours);
-    }
-
-    public String generateRefreshToken(String username, Collection<? extends GrantedAuthority> authorities) {
-        return generateToken(username, authorities, refreshTokenExpiresInHours);
-    }
-
-    private String generateToken(String username, Collection<? extends GrantedAuthority> authorities, long expiresInHours) {
         var now = Instant.now();
-        var expiresAt = now.plus(expiresInHours, ChronoUnit.HOURS);
-        var scopes = authorities.stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(" "));
+        var expiresAt = now.plusSeconds(accessTokenExpiresInSeconds);
         var claims = JwtClaimsSet.builder()
                 .issuer("self")
                 .issuedAt(now)
                 .expiresAt(expiresAt)
                 .subject(username)
-                .claim("scope", scopes)
+                .claim("scope", authorities)
                 .build();
+        return claimsToJwt(claims);
+    }
+
+    @Transactional
+    public String generateRefreshToken(String username) {
+        var now = Instant.now();
+        var expiresAt = now.plusSeconds(refreshTokenExpiresInSeconds);
+        var uuid = generateDashlessUUID();
+        var claims = JwtClaimsSet.builder()
+                .issuer("self")
+                .issuedAt(now)
+                .expiresAt(expiresAt)
+                .subject(username)
+                .id(uuid)
+                .build();
+        workingRefreshTokenRepository.deleteByOwnerUsername(username);
+        entityManager.flush();
+        workingRefreshTokenRepository.save(new WorkingRefreshToken(null, username, uuid));
+        return claimsToJwt(claims);
+    }
+
+    private String claimsToJwt(JwtClaimsSet claims) {
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    }
+
+    private String generateDashlessUUID() {
+        return UUID.randomUUID().toString().replace("-", "");
     }
 }
