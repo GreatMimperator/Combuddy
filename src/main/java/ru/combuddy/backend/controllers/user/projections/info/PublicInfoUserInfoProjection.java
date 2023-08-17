@@ -9,8 +9,4 @@ public interface PublicInfoUserInfoProjection {
     PublicInfoUserAccountProjection getUserAccount();
 
     Calendar getRegisteredDate();
-
-    boolean isModerator();
-
-    boolean isMainModerator();
 }

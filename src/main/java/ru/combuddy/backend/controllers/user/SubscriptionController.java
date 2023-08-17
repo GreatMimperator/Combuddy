@@ -2,10 +2,14 @@ package ru.combuddy.backend.controllers.user;
 
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.user.models.UsernamesList;
 import ru.combuddy.backend.controllers.user.service.interfaces.SubscriptionService;
+import ru.combuddy.backend.exceptions.NotExistsException;
+import ru.combuddy.backend.exceptions.ShouldNotBeEqualException;
 
 @RestController
 @RequestMapping("/api/user")
@@ -14,72 +18,68 @@ public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
 
-    @PutMapping("/subscribe/{subscriberUsername}/to/{posterUsername}")
+    @PutMapping("/subscribe/{posterUsername}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void subscribe(@PathVariable String subscriberUsername, @PathVariable String posterUsername) {
-        var subscribed = subscriptionService.subscribe(subscriberUsername, posterUsername);
-        if (!subscribed) {
+    public void subscribe(@PathVariable String posterUsername, Authentication authentication) {
+        var subscriberUsername = authentication.getName();
+        try {
+            subscriptionService.subscribe(subscriberUsername, posterUsername);
+        } catch (NotExistsException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Subscriber or poster username not found");
+        } catch (ShouldNotBeEqualException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Subscriber and poster username should not be equal");
         }
     }
 
-    @DeleteMapping("/unsubscribe/{subscriberUsername}/to/{posterUsername}")
+    @DeleteMapping("/unsubscribe/{posterUsername}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void unsubscribe(@PathVariable String subscriberUsername, @PathVariable String posterUsername) {
-        var unsubscribed = subscriptionService.unsubscribe(subscriberUsername, posterUsername);
-        if (!unsubscribed) {
+    public void unsubscribe(@PathVariable String posterUsername, Authentication authentication) {
+        var subscriberUsername = authentication.getName();
+        try {
+            subscriptionService.unsubscribe(subscriberUsername, posterUsername);
+        } catch (NotExistsException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Subscriber or poster username not found");
+        } catch (ShouldNotBeEqualException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Subscriber and poster username should not be equal");
         }
     }
 
-    @GetMapping("/subscriptions/{subscriberUsername}")
-    public UsernamesList getPosterUsernames(@PathVariable String subscriberUsername) {
-        var foundSubscriptions = subscriptionService.getPosterUsernames(subscriberUsername);
-        if (foundSubscriptions.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Users with this username do not exist");
-        }
-        return new UsernamesList(foundSubscriptions.get());
+    @GetMapping("/subscriptions/usernames")
+    public UsernamesList getPosterUsernames(Authentication authentication) {
+        var subscriberUsername = authentication.getName();
+        var subscriptions = subscriptionService.getPosterUsernames(subscriberUsername);
+        return new UsernamesList(subscriptions);
     }
 
-    @GetMapping("/subscriptions/beginWith/{posterUsernameBeginPart}/of/{subscriberUsername}")
-    public UsernamesList findPosterUsernamesBeginWith(@PathVariable String posterUsernameBeginPart,
-                                                     @PathVariable String subscriberUsername) {
-        var foundPosterUsernames = subscriptionService
+    @GetMapping("/subscriptions/beginWith/{posterUsernameBeginPart}/usernames")
+    public UsernamesList findPosterUsernamesBeginWith(@PathVariable String posterUsernameBeginPart, Authentication authentication) {
+        var subscriberUsername = authentication.getName();
+        var posterUsernames = subscriptionService
                 .findPosterUsernamesStartedWith(
                         posterUsernameBeginPart,
                         subscriberUsername);
-        if (foundPosterUsernames.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Users with this subscriber username do not exist");
-        }
-        return new UsernamesList(foundPosterUsernames.get());
+        return new UsernamesList(posterUsernames);
     }
 
 
-    @GetMapping("/subscribers/{posterUsername}")
-    public UsernamesList getSubscriberUsernames(@PathVariable String posterUsername) {
-        var foundSubscribers = subscriptionService.getSubscriberUsernames(posterUsername);
-        if (foundSubscribers.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Users with this username do not exist");
-        }
-        return new UsernamesList(foundSubscribers.get());
+    @GetMapping("/subscribers/usernames")
+    public UsernamesList getSubscriberUsernames(Authentication authentication) {
+        var posterUsername = authentication.getName();
+        var subscribers = subscriptionService.getSubscriberUsernames(posterUsername);
+        return new UsernamesList(subscribers);
     }
 
-    @GetMapping("/subscribers/beginWith/{subscriberUsernameBeginPart}/of/{posterUsername}")
-    public UsernamesList findSubscriberUsernamesBeginWith(@PathVariable String subscriberUsernameBeginPart,
-                                                          @PathVariable String posterUsername) {
-        var foundSubscribersUsernames = subscriptionService
+    @GetMapping("/subscribers/beginWith/{subscriberUsernameBeginPart}/usernames")
+    public UsernamesList findSubscriberUsernamesBeginWith(@PathVariable String subscriberUsernameBeginPart, Authentication authentication) {
+        var posterUsername = authentication.getName();
+        var subscribersUsernames = subscriptionService
                 .findSubscriberUsernamesStartedWith(
                         subscriberUsernameBeginPart,
                         posterUsername);
-        if (foundSubscribersUsernames.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Users with this poster username do not exist");
-        }
-        return new UsernamesList(foundSubscribersUsernames.get());
+        return new UsernamesList(subscribersUsernames);
     }
 }

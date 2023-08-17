@@ -24,15 +24,17 @@ VALUES
     (3, 3);
 
 
-INSERT INTO user_info(user_id, registered_date, moderator, main_moderator)
+INSERT INTO user_info(user_id, registered_date)
 VALUES
-    (1, now(), true, true),
-    (2, now(), true, false),
-    (3, now(), false, false);
+    (1, now()),
+    (2, now()),
+    (3, now());
 
 
 INSERT INTO subscription(subscriber_id, poster_id)
 VALUES
     (1, 2),
     (1, 3),
+    (2, 1),
+    (3, 1),
     (2, 3);

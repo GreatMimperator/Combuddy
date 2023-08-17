@@ -33,14 +33,6 @@ public class UserInfo {
     @Column(nullable = false)
     private Calendar registeredDate = Calendar.getInstance();
 
-    @NotNull
-    @Column(nullable = false)
-    private Boolean moderator = false;
-
-    @NotNull
-    @Column(nullable = false)
-    private Boolean mainModerator = false;
-
     @Size(max = MAX_PICTURE_THUMBNAIL_KB_SIZE * 1024)
     @Lob
     private byte[] pictureThumbnail;

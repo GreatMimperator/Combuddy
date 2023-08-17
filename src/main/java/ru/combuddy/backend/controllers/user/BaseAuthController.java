@@ -62,8 +62,8 @@ public class BaseAuthController {
         }
     }
 
-    @PostMapping("/secured")
-    public String secured() {
-        return "user allowed data";
+    @PostMapping("/refresh-token")
+    public LoginResponse refreshToken(@RequestParam String refreshToken) {
+
     }
 }

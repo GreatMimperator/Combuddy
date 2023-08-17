@@ -20,6 +20,8 @@ public class Role {
     @Column(unique = true, nullable = false)
     private String name;
 
+    // todo: relation should contain date of issue of the role and whom it was issued.
+    //  Many to many is not okay here
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private List<UserAccount> userAccounts;
 }

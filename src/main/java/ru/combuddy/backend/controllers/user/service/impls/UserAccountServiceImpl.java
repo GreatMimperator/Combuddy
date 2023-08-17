@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import ru.combuddy.backend.controllers.user.models.User;
 import ru.combuddy.backend.controllers.user.projections.account.UsernameOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
-import ru.combuddy.backend.entities.user.Subscription;
 import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.exceptions.AlreadyExistsException;
 import ru.combuddy.backend.repositories.user.UserAccountRepository;
@@ -102,5 +101,13 @@ public class UserAccountServiceImpl implements UserAccountService {
             return Optional.empty();
         }
         return Optional.of(usernamesList);
+    }
+
+    public static <Returned>List<String> getUsernames(
+            Function<Returned, String> returnedToUsernameConverter,
+            List<Returned> returnedList) {
+        return returnedList.stream()
+                .map(returnedToUsernameConverter)
+                .toList();
     }
 }
