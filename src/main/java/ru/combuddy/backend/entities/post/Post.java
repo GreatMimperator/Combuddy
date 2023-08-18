@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import ru.combuddy.backend.entities.complain.post.PostComplaint;
 import ru.combuddy.backend.entities.contact.post.PostContact;
 import ru.combuddy.backend.entities.contact.post.PostUserContact;
@@ -15,8 +16,9 @@ import ru.combuddy.backend.entities.user.UserAccount;
 import java.util.Calendar;
 import java.util.List;
 
-@Data
 @Entity
+@Data
+@EqualsAndHashCode(of = "id")
 public class Post {
     public static final int MIN_TITLE_LENGTH = 20;
     public static final int MAX_TITLE_LENGTH = 150;

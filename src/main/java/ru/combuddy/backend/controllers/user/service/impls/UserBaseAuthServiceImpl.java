@@ -8,19 +8,19 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import ru.combuddy.backend.controllers.user.models.LoginResponse;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserBaseAuthService;
 import ru.combuddy.backend.exceptions.AlreadyExistsException;
 import ru.combuddy.backend.exceptions.NotExistsException;
 import ru.combuddy.backend.repositories.user.UserAccountRepository;
 import ru.combuddy.backend.security.TokenService;
-import ru.combuddy.backend.security.BaseAuthUserDetailsService;
 import ru.combuddy.backend.security.entities.Role;
 import ru.combuddy.backend.security.entities.UserBaseAuth;
 import ru.combuddy.backend.security.repositories.UserBaseAuthRepository;
 
 import java.util.Collection;
+
+import static ru.combuddy.backend.entities.user.UserAccount.getRoles;
 
 @Service
 @AllArgsConstructor
@@ -30,9 +30,6 @@ public class UserBaseAuthServiceImpl implements UserBaseAuthService {
     private final UserBaseAuthRepository authenticationRepository;
     private final TokenService tokenService;
     private final AuthenticationManager authenticationManager;
-    private final BaseAuthUserDetailsService userDetailsService;
-
-    private final PlatformTransactionManager transactionManager;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -49,7 +46,7 @@ public class UserBaseAuthServiceImpl implements UserBaseAuthService {
         var userBaseAuth = new UserBaseAuth(null, userAccount, passwordEncoder.encode(password));
         authenticationRepository.save(userBaseAuth);
         userAccount.setBaseAuth(userBaseAuth);
-        return login(userAccount.getUsername(), userAccount.getRoles(), password); // AuthenticationException risk. Creation will be rolled back if thrown
+        return login(userAccount.getUsername(), getRoles(userAccount), password); // AuthenticationException risk. Creation will be rolled back if thrown
     }
 
     @Override

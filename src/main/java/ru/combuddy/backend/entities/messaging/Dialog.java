@@ -3,13 +3,15 @@ package ru.combuddy.backend.entities.messaging;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import ru.combuddy.backend.entities.post.Post;
 import ru.combuddy.backend.entities.user.UserAccount;
 
 import java.util.List;
 
-@Data
 @Entity
+@Data
+@EqualsAndHashCode(of = "id")
 public class Dialog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

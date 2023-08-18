@@ -17,15 +17,15 @@ public interface SubscriptionService {
     List<String> getSubscriberUsernames(String posterUsername);
 
     /**
-     * @throws NotExistsException if any of user do not exist
      * @throws ShouldNotBeEqualException if subscriber and poster username are equal
+     * @throws NotExistsException if any of user do not exist
      */
-    void subscribe(String subscriberUsername, String posterUsername) throws NotExistsException, ShouldNotBeEqualException;
+    void subscribe(String subscriberUsername, String posterUsername) throws ShouldNotBeEqualException, NotExistsException;
 
     /**
-     * @throws NotExistsException if any of user do not exist
      * @throws ShouldNotBeEqualException if subscriber and poster username are equal
+     * @throws NotExistsException if any of user do not exist
      */
-    void unsubscribe(String subscriberUsername, String posterUsername) throws NotExistsException, ShouldNotBeEqualException;
+    void unsubscribe(String subscriberUsername, String posterUsername) throws ShouldNotBeEqualException, NotExistsException;
 
 }

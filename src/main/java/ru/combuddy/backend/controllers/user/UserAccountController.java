@@ -1,72 +1,112 @@
 package ru.combuddy.backend.controllers.user;
 
-import jakarta.validation.Valid;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.user.models.UsernamesList;
-import ru.combuddy.backend.controllers.user.models.User;
+import ru.combuddy.backend.controllers.user.service.interfaces.UserRoleService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
-import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
-import ru.combuddy.backend.exceptions.AlreadyExistsException;
+import ru.combuddy.backend.entities.user.UserAccount;
+import ru.combuddy.backend.exceptions.NotExistsException;
+import ru.combuddy.backend.security.entities.Role;
 
-import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
+
+import static ru.combuddy.backend.util.RoleUtil.getStringAuthorities;
 
 @RestController
 @RequestMapping("/api/user/account")
 @AllArgsConstructor
 public class UserAccountController {
 
-    private final UserInfoService userInfoService;
     private final UserAccountService userAccountService;
+    private final UserRoleService userRoleService;
 
-    @PostMapping(value = "/create",
-            consumes = {MediaType.MULTIPART_FORM_DATA_VALUE,
-                    MediaType.MULTIPART_MIXED_VALUE})
-    @ResponseStatus(HttpStatus.CREATED)
-    public void create(@RequestPart("user") @Valid User user, @RequestPart("picture") MultipartFile imageMultipartFile) throws IOException {
-        if (userAccountService.exists(user.getUserAccount().getUsername())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "User with this username already exist"); // to not perform computations
+    // todo: test it in postman
+
+    @PostMapping("/freeze/{suspectUsername}")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'MAIN_MODERATOR')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void freeze(@PathVariable String suspectUsername, Authentication authentication) {
+        setFrozenState(true, suspectUsername, authentication);
+    }
+
+    @PostMapping("/unfreeze/{suspectUsername}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unfreeze(@PathVariable String suspectUsername, Authentication authentication) {
+        setFrozenState(false, suspectUsername, authentication);
+    }
+
+    private void setFrozenState(boolean frozen, String suspectUsername, Authentication authentication)
+            throws ResponseStatusException {
+        var suspenderAuthorities = getStringAuthorities(authentication);
+        var suspectAuthorities = getStringAuthorities(userRoleService.getRoles(suspectUsername));
+        if (suspectUsername.equals(authentication.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "You can't freeze yourself");
         }
-        userInfoService.addFullAndThumbnailPictures(user, imageMultipartFile);
+        if (!canFreezeAccount(suspenderAuthorities, suspectAuthorities)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You can't freeze / unfreeze an account that is above you (or the same level) in the hierarchy");
+        }
         try {
-            userAccountService.createUser(user);
-        } catch (AlreadyExistsException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "User with this username already exist");
-        }
-    }
-
-    @PostMapping("/freeze/{username}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void freeze(@PathVariable String username) {
-        boolean updatedFrozen = userAccountService.updateFrozenState(true, username);
-        if (!updatedFrozen) {
+            userAccountService.updateFrozenState(frozen, suspectUsername);
+        } catch (NotExistsException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Users with this username do not exist");
         }
     }
 
-    @PostMapping("/unfreeze/{username}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void unfreeze(@PathVariable String username) {
-        boolean updatedFrozen = userAccountService.updateFrozenState(false, username);
-        if (!updatedFrozen) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Users with this username do not exist");
-        }
+    public boolean canFreezeAccount(Set<String> suspenderAuthorities, Set<String> suspectAuthorities) {
+        // suspender hierarchy markers construct
+        boolean isSuspenderModerator = isModerator(suspenderAuthorities);
+        boolean isSuspenderMainModerator = isMainModerator(suspenderAuthorities);
+        boolean[] suspenderHierarchyMarkers = new boolean[] {
+                isSuspenderModerator,
+                isSuspenderMainModerator};
+        // suspect hierarchy markers construct
+        boolean isSuspectModerator = isModerator(suspectAuthorities);
+        boolean isSuspectMainModerator = isMainModerator(suspectAuthorities);
+        boolean[] suspectHierarchyMarkers = new boolean[] {
+                isSuspectModerator,
+                isSuspectMainModerator};
+        System.err.println(MessageFormat.format("{0} {1}, {2} {3}", isSuspenderModerator, isSuspenderMainModerator, isSuspectModerator, isSuspectMainModerator));
+        // comparing hierarchies
+        return Role.isAboveInHierarchy(
+                suspenderHierarchyMarkers,
+                suspectHierarchyMarkers);
     }
 
-    @DeleteMapping("/delete/{username}")
+    private boolean isMainModerator(Collection<String> authorities) {
+        return authorities.contains("ROLE_MAIN_MODERATOR");
+    }
+
+    private boolean isModerator(Collection<String> authorities) {
+        return authorities.contains("ROLE_MODERATOR");
+    }
+
+    @DeleteMapping("/delete/{suspectUsername}")
+    @PreAuthorize("hasRole('MAIN_MODERATOR')")
+    @Transactional
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable String username) {
-        boolean deleted = userAccountService.delete(username);
-        if (!deleted) {
+    public void delete(@PathVariable String suspectUsername) {
+        var suspectAuthorities = getStringAuthorities(userRoleService.getRoles(suspectUsername));
+        boolean isSuspenderMainModerator = isMainModerator(suspectAuthorities);
+        boolean isSuspenderModerator = isModerator(suspectAuthorities);
+        if (isSuspenderMainModerator || isSuspenderModerator) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Can not delete moderator or main moderator account via rest api. Do it directly via database");
+        }
+        try {
+            userAccountService.delete(suspectUsername);
+        } catch (NotExistsException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Users with this username do not exist");
         }
@@ -77,4 +117,15 @@ public class UserAccountController {
         return new UsernamesList(userAccountService.findUsernamesStartedWith(beginPart));
     }
 
+    /**
+     * @throws ResponseStatusException if foundUserAccount is empty
+     * @return unwrapped userAccount
+     */
+    public static UserAccount checkFoundAccount(Optional<UserAccount> foundUserAccount) throws ResponseStatusException {
+        if (foundUserAccount.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Users with this username do not exist");
+        }
+        return foundUserAccount.get();
+    }
 }

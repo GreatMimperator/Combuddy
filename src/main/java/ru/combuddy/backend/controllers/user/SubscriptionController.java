@@ -29,7 +29,7 @@ public class SubscriptionController {
                     "Subscriber or poster username not found");
         } catch (ShouldNotBeEqualException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Subscriber and poster username should not be equal");
+                    "Subscriber and poster usernames should not be equal");
         }
     }
 
@@ -44,7 +44,7 @@ public class SubscriptionController {
                     "Subscriber or poster username not found");
         } catch (ShouldNotBeEqualException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Subscriber and poster username should not be equal");
+                    "Subscriber and poster usernames should not be equal");
         }
     }
 

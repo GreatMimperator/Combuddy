@@ -7,19 +7,18 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.user.models.LoginResponse;
-import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountRolesService;
+import ru.combuddy.backend.controllers.user.service.interfaces.UserRoleService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserBaseAuthService;
 import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.exceptions.AlreadyExistsException;
-import ru.combuddy.backend.security.TokenService;
-import ru.combuddy.backend.security.entities.Role;
 import ru.combuddy.backend.security.repositories.WorkingRefreshTokenRepository;
+
+import static ru.combuddy.backend.entities.user.UserAccount.getRoles;
 
 @RestController
 @RequestMapping("/api/user/auth")
@@ -27,7 +26,7 @@ import ru.combuddy.backend.security.repositories.WorkingRefreshTokenRepository;
 public class AuthController {
 
     private final UserAccountService userAccountService;
-    private final UserAccountRolesService userAccountRolesService;
+    private final UserRoleService userRoleService;
     private final UserBaseAuthService userBaseAuthService;
     private final WorkingRefreshTokenRepository workingRefreshTokenRepository;
 
@@ -55,7 +54,7 @@ public class AuthController {
         }
         var userAccount = foundUserAccount.get();
         try {
-            return userBaseAuthService.login(userAccount.getUsername(), userAccount.getRoles(), password);
+            return userBaseAuthService.login(userAccount.getUsername(), getRoles(userAccount), password);
         } catch (LockedException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Account is frozen");
@@ -89,7 +88,7 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "Refresh token has compromised. You should log in again");
         }
-        var refreshedRoles = userAccountRolesService.getRoles(username);
+        var refreshedRoles = userRoleService.getRoles(username);
         return userBaseAuthService.generateLoginResponse(username, refreshedRoles);
     }
 

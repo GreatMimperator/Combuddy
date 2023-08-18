@@ -4,13 +4,15 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-@Data
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"defended_id", "aggressor_id"}))
+@Data
+@EqualsAndHashCode(of = "id")
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"defended_id", "aggressor_id"}))
 public class BlackList {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

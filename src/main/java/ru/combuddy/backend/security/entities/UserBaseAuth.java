@@ -3,11 +3,13 @@ package ru.combuddy.backend.security.entities;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import ru.combuddy.backend.entities.user.UserAccount;
 
-@Data
 @Entity
+@Data
+@EqualsAndHashCode(of = {"id", "encryptedPassword"})
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserBaseAuth {

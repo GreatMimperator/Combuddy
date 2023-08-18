@@ -1,14 +1,14 @@
 package ru.combuddy.backend.security;
 
 import lombok.AllArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
-import ru.combuddy.backend.security.BaseAuthUserDetails;
 
 import java.text.MessageFormat;
+
+import static ru.combuddy.backend.entities.user.UserAccount.getRoles;
 
 @Component
 @AllArgsConstructor
@@ -28,7 +28,7 @@ public class BaseAuthUserDetailsService implements UserDetailsService {
                 .username(username)
                 .password(userAccount.getBaseAuth().getEncryptedPassword())
                 .isLocked(userAccount.getFrozen())
-                .roles(userAccount.getRoles())
+                .roles(getRoles(userAccount))
                 .build();
     }
 }

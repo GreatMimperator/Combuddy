@@ -4,15 +4,17 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import ru.combuddy.backend.security.entities.Role;
 
-@Data
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"user_account_id", "role_id"}))
+@Data
+@EqualsAndHashCode(of = "id")
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"user_account_id", "role_id"}))
-public class UserAccountRoles {
+public class UserRole {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,5 +29,5 @@ public class UserAccountRoles {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    // todo: given date and whom
+    // todo: given date and whom (don't forget about eqAndHashcode)
 }

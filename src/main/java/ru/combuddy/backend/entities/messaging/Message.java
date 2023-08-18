@@ -4,12 +4,14 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import ru.combuddy.backend.entities.user.UserAccount;
 
 import java.util.Calendar;
 
-@Data
 @Entity
+@Data
+@EqualsAndHashCode(of = "id")
 public class Message {
     public static final int MIN_TEXT_LENGTH = 1;
     public static final int MAX_TEXT_LENGTH = 1000;
@@ -31,10 +33,10 @@ public class Message {
     @NotNull
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false)
-    private Calendar date = Calendar.getInstance();
+    private Calendar creationDate = Calendar.getInstance();
 
     @Temporal(TemporalType.TIMESTAMP)
-    private Calendar changed_date = null;
+    private Calendar changedDate = null;
 
     @ManyToOne
     @JoinColumn(name = "message_reply_to_id")

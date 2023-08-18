@@ -4,13 +4,15 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import ru.combuddy.backend.entities.post.Post;
 import ru.combuddy.backend.entities.user.UserAccount;
 
 import java.util.Calendar;
 
-@Data
 @Entity
+@Data
+@EqualsAndHashCode(of = "id")
 public class PublicMessage {
     public static final int MIN_TEXT_LENGTH = 1;
     public static final int MAX_TEXT_LENGTH = 250;
@@ -38,7 +40,7 @@ public class PublicMessage {
     @NotNull
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false)
-    private Calendar date = Calendar.getInstance();
+    private Calendar creationDate = Calendar.getInstance();
 
     @NotNull
     @Size(min = MIN_TEXT_LENGTH, max = MAX_TEXT_LENGTH)

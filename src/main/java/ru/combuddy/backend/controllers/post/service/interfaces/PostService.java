@@ -2,15 +2,16 @@ package ru.combuddy.backend.controllers.post.service.interfaces;
 
 import ru.combuddy.backend.controllers.post.models.PostCreationData;
 import ru.combuddy.backend.entities.post.Post;
+import ru.combuddy.backend.exceptions.NotExistsException;
 
 public interface PostService {
     /**
-     * @return false if data hasn't user with this username, true if created
+     * @throws NotExistsException If creater account with this username doesn't exist
      */
-    boolean create(PostCreationData postCreationData);
+    void create(Post post, String creatorUsername) throws NotExistsException;
 
     /**
-     * @return false if post with id doesn't exist, true if set
+     * @throws NotExistsException If post with this id doesn't exist
      */
-    boolean updateArchivedState(Long postId, boolean archived);
+    void updateArchivedState(Long postId, String archivistUsername, boolean archived) throws NotExistsException;
 }

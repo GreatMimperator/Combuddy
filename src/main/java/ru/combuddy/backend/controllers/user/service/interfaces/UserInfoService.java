@@ -2,8 +2,9 @@ package ru.combuddy.backend.controllers.user.service.interfaces;
 
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import ru.combuddy.backend.controllers.user.models.User;
-import ru.combuddy.backend.controllers.user.projections.info.PublicInfoUserInfoProjection;
+import ru.combuddy.backend.controllers.user.models.UserPublicInfo;
+import ru.combuddy.backend.entities.user.UserInfo;
+import ru.combuddy.backend.exceptions.NotExistsException;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -13,7 +14,19 @@ public interface UserInfoService {
 
     Optional<byte[]> getFullPictureBytes(String username);
 
-    void addFullAndThumbnailPictures(User user, MultipartFile imageMultipartFile) throws ResponseStatusException, IOException;
+    /**
+     * @throws ResponseStatusException <br>
+     * If picture type is not supported <br>
+     * If picture has illegal resolution <br>
+     * If converted picture or its thumbnail has too big resolution
+     * @throws IOException on picture manipulation exceptions
+     */
+    void addFullAndThumbnailPictures(UserInfo userInfo, MultipartFile imageMultipartFile) throws ResponseStatusException, IOException;
 
-    Optional<PublicInfoUserInfoProjection> getPublicInfo(String username);
+    /**
+     * @throws NotExistsException if user with this username doesn't exist
+     */
+    UserPublicInfo getPublicInfo(String username) throws NotExistsException;
+
+    UserInfo save(UserInfo userInfo);
 }

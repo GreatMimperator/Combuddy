@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import ru.combuddy.backend.entities.contact.post.PostContact;
 import ru.combuddy.backend.entities.contact.post.PostUserContact;
 import ru.combuddy.backend.entities.contact.user.UserContact;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Data
 @Entity
+@EqualsAndHashCode(of = "id")
 public class ContactType {
     public static final int MIN_NAME_LENGTH = 1;
     public static final int MAX_NAME_LENGTH = 35;

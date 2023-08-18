@@ -2,14 +2,16 @@ INSERT INTO user_account(username, frozen)
 VALUES
     ('random_user', false),
     ('moderator', false),
-    ('main_moderator', false);
+    ('main_moderator', false),
+    ('another_moderator', false);
 
 -- CREATE EXTENSION pgcrypto; before execution for gen_salt function
 INSERT INTO user_base_auth(user_id, encrypted_password)
 VALUES
     (1, crypt('random_user_password', gen_salt('bf'))),
     (2, crypt('moderator_password', gen_salt('bf'))),
-    (3, crypt('main_moderator_password', gen_salt('bf')));
+    (3, crypt('main_moderator_password', gen_salt('bf'))),
+    (4, crypt('another_moderator_password', gen_salt('bf')));
 
 INSERT INTO role(name)
 VALUES
@@ -17,18 +19,20 @@ VALUES
     ('ROLE_MODERATOR'),
     ('ROLE_MAIN_MODERATOR');
 
-INSERT INTO user_roles(user_id, role_id)
+INSERT INTO user_role(user_account_id, role_id)
 VALUES
     (1, 1),
     (2, 2),
-    (3, 3);
+    (3, 3),
+    (4, 2);
 
 
 INSERT INTO user_info(user_id, registered_date)
 VALUES
     (1, now()),
     (2, now()),
-    (3, now());
+    (3, now()),
+    (4, now());
 
 
 INSERT INTO subscription(subscriber_id, poster_id)

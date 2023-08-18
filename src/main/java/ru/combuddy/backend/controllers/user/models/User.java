@@ -7,6 +7,7 @@ import lombok.Data;
 import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.entities.user.UserInfo;
 
+@Deprecated
 @Data
 @AllArgsConstructor
 @JsonPropertyOrder({"userAccount", "userInfo"})

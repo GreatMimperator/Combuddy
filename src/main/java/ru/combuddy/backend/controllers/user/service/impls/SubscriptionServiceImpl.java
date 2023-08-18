@@ -27,7 +27,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private UserAccountService userAccountService;
 
     @Override
-    public void subscribe(String subscriberUsername, String posterUsername) throws NotExistsException, ShouldNotBeEqualException {
+    public void subscribe(String subscriberUsername, String posterUsername) throws ShouldNotBeEqualException, NotExistsException {
         usernamesEqualCheck(subscriberUsername, posterUsername);
         var foundSubscriber = userAccountService.findByUsername(subscriberUsername);
         var foundPoster = userAccountService.findByUsername(posterUsername);
@@ -44,7 +44,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public void unsubscribe(String subscriberUsername, String posterUsername) throws NotExistsException, ShouldNotBeEqualException {
+    public void unsubscribe(String subscriberUsername, String posterUsername) throws ShouldNotBeEqualException, NotExistsException {
         usernamesEqualCheck(subscriberUsername, posterUsername);
         var foundSubscriber = userAccountService.findByUsername(subscriberUsername);
         var foundPoster = userAccountService.findByUsername(posterUsername);
@@ -55,7 +55,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     /**
-     * @throws ShouldNotBeEqualException if subscriber and poster username are equal
+     * @throws ShouldNotBeEqualException if subscriber and poster usernames are equal
      */
     private void usernamesEqualCheck(String subscriberUsername, String posterUsername)
             throws ShouldNotBeEqualException {
@@ -88,8 +88,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public List<String> getPosterUsernames(String subscriberUsername) {
         var usernamesList = subscriptionRepository
                 .getPosterUsernamesBySubscriberUsername(subscriberUsername);
-        return getUsernames(r -> r.getPoster().getUsername(),
-                usernamesList);
+        return usernamesList.stream()
+                .map(r -> r.getPoster().getUsername())
+                .toList();
     }
 
     @Override
@@ -98,15 +99,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .findPosterUsernamesBySubscriberUsernameAndPosterUsernameStartingWith(
                         subscriberUsername,
                         posterUsernameBeginWith);
-        return getUsernames(r -> r.getPoster().getUsername(),
-                foundUsernamesList);
+        return foundUsernamesList.stream()
+                .map(r -> r.getPoster().getUsername())
+                .toList();
     }
 
     @Override
     public List<String> getSubscriberUsernames(String posterUsername) {
         var usernamesList = subscriptionRepository.getSubscriberUsernamesByPosterUsername(posterUsername);
-        return getUsernames(r -> r.getSubscriber().getUsername(),
-                usernamesList);
+        return usernamesList.stream()
+                .map(r -> r.getSubscriber().getUsername())
+                .toList();
     }
 
     @Override
@@ -115,8 +118,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .findSubscriberUsernamesByPosterUsernameAndSubscriberUsernameStartingWith(
                         posterUsername,
                         subscriberUsernameBeginWith);
-        return getUsernames(r -> r.getSubscriber().getUsername(),
-                usernamesList);
+        return usernamesList.stream()
+                .map(r -> r.getSubscriber().getUsername())
+                .toList();
     }
 
 }

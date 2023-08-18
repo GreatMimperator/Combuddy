@@ -14,6 +14,7 @@ import ru.combuddy.backend.security.repositories.WorkingRefreshTokenRepository;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class TokenService {
@@ -38,12 +39,15 @@ public class TokenService {
     public String generateAccessToken(String username, Collection<? extends GrantedAuthority> authorities) {
         var now = Instant.now();
         var expiresAt = now.plusSeconds(accessTokenExpiresInSeconds);
+        var scope = authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(" "));
         var claims = JwtClaimsSet.builder()
                 .issuer("self")
                 .issuedAt(now)
                 .expiresAt(expiresAt)
                 .subject(username)
-                .claim("scope", authorities)
+                .claim("scope", scope)
                 .build();
         return claimsToJwt(claims);
     }

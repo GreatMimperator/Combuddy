@@ -4,13 +4,15 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-@Data
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"subscriber_id", "poster_id"}))
+@Data
+@EqualsAndHashCode(of = "id")
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"subscriber_id", "poster_id"}))
 public class Subscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

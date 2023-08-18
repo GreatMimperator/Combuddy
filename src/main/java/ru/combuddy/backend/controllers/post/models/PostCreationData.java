@@ -9,6 +9,8 @@ import lombok.Data;
 import ru.combuddy.backend.entities.post.Post;
 import ru.combuddy.backend.entities.user.UserAccount;
 
+// todo: add related data (tags, postContacts, postUserContacts)
+
 @Data
 @JsonPropertyOrder({"posterUsername", "post"})
 public class PostCreationData {

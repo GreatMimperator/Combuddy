@@ -13,19 +13,16 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
-import ru.combuddy.backend.repositories.user.UserAccountRepository;
 import ru.combuddy.backend.security.JwtLockableAuthenticationProvider;
 
 @Configuration
@@ -66,7 +63,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authManager(@Qualifier("jwtTokenProvider") AuthenticationProvider jwtTokenProvider, @Qualifier("usernamePasswordProvider") AuthenticationProvider usernamePasswordProvider) {
+    public AuthenticationManager authManager(@Qualifier("jwtTokenProvider") AuthenticationProvider jwtTokenProvider,
+                                             @Qualifier("usernamePasswordProvider") AuthenticationProvider usernamePasswordProvider) {
         return new ProviderManager(jwtTokenProvider, usernamePasswordProvider);
     }
 
@@ -77,12 +75,13 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, BearerTokenAuthenticationFilter bearerTokenAuthenticationFilter) throws Exception {
-        http = http.csrf(AbstractHttpConfigurer::disable)
+        http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        http = http.authorizeRequests()
-                .requestMatchers("/api/user/auth/**").permitAll()
-                .anyRequest().authenticated().and();
+        http.authorizeHttpRequests((authorizeHttpRequest) ->
+                authorizeHttpRequest
+                        .requestMatchers("/api/user/auth/**").permitAll()
+                        .anyRequest().authenticated());
 
         http.addFilterBefore(
                 bearerTokenAuthenticationFilter,

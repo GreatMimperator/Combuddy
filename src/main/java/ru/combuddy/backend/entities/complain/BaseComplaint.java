@@ -3,12 +3,14 @@ package ru.combuddy.backend.entities.complain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import ru.combuddy.backend.entities.user.UserAccount;
 
 import java.util.Calendar;
 
-@Data
 @MappedSuperclass
+@Data
+@EqualsAndHashCode(of = "id")
 public class BaseComplaint {
     public static final int MAX_TEXT_LENGTH = 250;
 
@@ -24,7 +26,7 @@ public class BaseComplaint {
     @NotNull
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false)
-    private Calendar date = Calendar.getInstance();
+    private Calendar creationDate = Calendar.getInstance();
 
     @NotNull
     @Column(length = MAX_TEXT_LENGTH, nullable = false)

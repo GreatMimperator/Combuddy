@@ -3,10 +3,12 @@ package ru.combuddy.backend.entities.complain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import ru.combuddy.backend.entities.user.UserAccount;
 
-@Data
 @MappedSuperclass
+@Data
+@EqualsAndHashCode(of = "id")
 public class BaseComplaintJudgment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
