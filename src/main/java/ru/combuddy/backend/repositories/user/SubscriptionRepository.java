@@ -6,11 +6,12 @@ import ru.combuddy.backend.controllers.user.projections.subscription.Subscriptio
 import ru.combuddy.backend.entities.user.Subscription;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface SubscriptionRepository extends CrudRepository<Subscription, Long> {
     boolean existsBySubscriberIdAndPosterId(long subscriberId, long posterId);
 
-    void deleteBySubscriberIdAndPosterId(long subscriberId, long posterId);
+    int deleteBySubscriberUsernameAndPosterUsername(String subscriberUsername, String posterUsername);
 
     List<SubscriptionPosterUsernameProjection> getPosterUsernamesBySubscriberUsername(String subscriberUsername);
 
@@ -23,4 +24,8 @@ public interface SubscriptionRepository extends CrudRepository<Subscription, Lon
     List<SubscriptionSubscriberUsernameProjection> findSubscriberUsernamesByPosterUsernameAndSubscriberUsernameStartingWith(
             String posterUsername,
             String subscriberUsernameStartedWith);
+
+    Optional<Subscription> findSubscriptionByPosterUsernameAndSubscriberUsername(
+            String posterUsername,
+            String subscriberUsername);
 }

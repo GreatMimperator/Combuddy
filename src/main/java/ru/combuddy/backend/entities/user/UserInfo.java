@@ -13,7 +13,7 @@ import java.util.Calendar;
 
 @Entity
 @Table(indexes = @Index(columnList = "user_id"))
-@JsonPropertyOrder({"id", "userAccount", "registeredDate", "moderator", "mainModerator"})
+@JsonPropertyOrder({"id", "userAccount", "registeredDate", "moderator", "mainModerator"}) // todo: как я могу это в json, вдруг там данные приватные?
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
@@ -28,8 +28,8 @@ public class UserInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL, optional = false)
-    @JoinColumn(name="user_id", nullable = false)
+    @OneToOne
+    @JoinColumn(name="user_id", /*unique = true,*/ nullable = false)
     private UserAccount userAccount;
 
     @NotNull

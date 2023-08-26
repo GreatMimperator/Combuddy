@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.user.models.UsernamesList;
 import ru.combuddy.backend.controllers.user.service.interfaces.BlackListService;
+import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
+import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.exceptions.NotExistsException;
 import ru.combuddy.backend.exceptions.ShouldNotBeEqualException;
 
@@ -36,15 +38,7 @@ public class BlackListController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void remove(@PathVariable String aggressorUsername, Authentication authentication) {
         var defendedUsername = authentication.getName();
-        try {
-            blackListService.remove(aggressorUsername, defendedUsername);
-        } catch (NotExistsException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Aggressor or defended username not found");
-        } catch (ShouldNotBeEqualException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Aggressor and defended usernames should not be equal");
-        }
+        blackListService.delete(aggressorUsername, defendedUsername);
     }
 
     @GetMapping("/aggressors")

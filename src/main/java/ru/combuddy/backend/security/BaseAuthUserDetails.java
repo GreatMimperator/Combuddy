@@ -3,15 +3,13 @@ package ru.combuddy.backend.security;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import ru.combuddy.backend.security.entities.Role;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -20,15 +18,12 @@ public class BaseAuthUserDetails implements UserDetails {
 
     private String username;
     private String password;
-    private Set<Role> roles;
+    private Role.RoleName roleName;
     private boolean isLocked;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
-                .map(Role::getName)
-                .map(SimpleGrantedAuthority::new)
-                .toList();
+        return List.of(new SimpleGrantedAuthority(roleName.name()));
     }
 
     @Override

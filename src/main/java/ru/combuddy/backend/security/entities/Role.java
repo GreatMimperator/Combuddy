@@ -1,18 +1,17 @@
 package ru.combuddy.backend.security.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import ru.combuddy.backend.entities.user.UserRole;
+import lombok.*;
+import org.springframework.stereotype.Component;
+import ru.combuddy.backend.entities.user.UserAccount;
+import ru.combuddy.backend.exceptions.NotExistsException;
 
 import java.text.MessageFormat;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Data
-@EqualsAndHashCode(of = "name")
+@EqualsAndHashCode(of = "id")
 @AllArgsConstructor
 @NoArgsConstructor
 public class Role {
@@ -21,28 +20,59 @@ public class Role {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String name;
+    @Enumerated(EnumType.STRING)
+    private RoleName name;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "role")
-    private Set<UserRole> userRoles;
+    private List<UserAccount> users;
 
-    /**
-     * @throws IllegalArgumentException if hierarchy markers do not have the same length
-     */
-    public static boolean isAboveInHierarchy(boolean[] firstHierarchyMarkers, boolean[] secondHierarchyMarkers)
-            throws IllegalArgumentException {
-        if (firstHierarchyMarkers.length != secondHierarchyMarkers.length) {
-            throw new IllegalArgumentException(
-                    MessageFormat.format("Hierarchy markers do not have the same length: {0} != {1}",
-                            firstHierarchyMarkers.length,
-                            secondHierarchyMarkers.length));
-        }
-        for (var i = firstHierarchyMarkers.length - 1; i >= 0; i--) {
-            // any of them is above, or they are the same level
-            if (firstHierarchyMarkers[i] || secondHierarchyMarkers[i]) {
-                return firstHierarchyMarkers[i] && !secondHierarchyMarkers[i];
+    @Getter
+    @AllArgsConstructor
+    public enum RoleName implements Comparable<RoleName> {
+        ROLE_USER(0),
+        ROLE_MODERATOR(1),
+        ROLE_MAIN_MODERATOR(2);
+
+        private final int authorityOrderMarker;
+
+        @Component
+        public static class AuthorityComparator implements Comparator<RoleName> {
+            @Override
+            public int compare(RoleName first, RoleName second) {
+                return Integer.compare(
+                        first.getAuthorityOrderMarker(),
+                        second.getAuthorityOrderMarker());
+            }
+
+            public int compare(UserAccount first, RoleName secondRoleName) {
+                var firstRoleName = first.getRole().getName();
+                return compare(firstRoleName, secondRoleName);
+            }
+
+            public int compare(UserAccount first, UserAccount second) {
+                var firstRoleName = first.getRole().getName();
+                var secondRoleName = second.getRole().getName();
+                return compare(firstRoleName, secondRoleName);
             }
         }
-        return false;
+
+
+
+        /**
+         * Converts using name field of RoleName and ignoring case in equal check
+         *
+         * @throws NotExistsException if has not role with this name
+         */
+        public static Role.RoleName convertToRoleName(String roleNameAsString) throws NotExistsException {
+            for (var roleName : RoleName.values()) {
+                if (roleName.name().equalsIgnoreCase(roleNameAsString)) {
+                    return roleName;
+                }
+            }
+            throw new NotExistsException(
+                    MessageFormat.format("Role name {0} does not exist as enum value",
+                            roleNameAsString),
+                    roleNameAsString);
+        }
     }
 }

@@ -55,7 +55,7 @@ public class SubscriptionController {
         return new UsernamesList(subscriptions);
     }
 
-    @GetMapping("/subscriptions/beginWith/{posterUsernameBeginPart}/usernames")
+    @GetMapping("/subscriptions/usernames/beginWith/{posterUsernameBeginPart}")
     public UsernamesList findPosterUsernamesBeginWith(@PathVariable String posterUsernameBeginPart, Authentication authentication) {
         var subscriberUsername = authentication.getName();
         var posterUsernames = subscriptionService
@@ -73,7 +73,7 @@ public class SubscriptionController {
         return new UsernamesList(subscribers);
     }
 
-    @GetMapping("/subscribers/beginWith/{subscriberUsernameBeginPart}/usernames")
+    @GetMapping("/subscribers/usernames/beginWith/{subscriberUsernameBeginPart}")
     public UsernamesList findSubscriberUsernamesBeginWith(@PathVariable String subscriberUsernameBeginPart, Authentication authentication) {
         var posterUsername = authentication.getName();
         var subscribersUsernames = subscriptionService

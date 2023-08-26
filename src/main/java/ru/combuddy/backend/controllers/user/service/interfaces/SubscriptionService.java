@@ -1,6 +1,7 @@
 package ru.combuddy.backend.controllers.user.service.interfaces;
 
 import ru.combuddy.backend.controllers.user.models.UsernamesList;
+import ru.combuddy.backend.entities.user.Subscription;
 import ru.combuddy.backend.exceptions.NotExistsException;
 import ru.combuddy.backend.exceptions.ShouldNotBeEqualException;
 
@@ -22,10 +23,8 @@ public interface SubscriptionService {
      */
     void subscribe(String subscriberUsername, String posterUsername) throws ShouldNotBeEqualException, NotExistsException;
 
-    /**
-     * @throws ShouldNotBeEqualException if subscriber and poster username are equal
-     * @throws NotExistsException if any of user do not exist
-     */
-    void unsubscribe(String subscriberUsername, String posterUsername) throws ShouldNotBeEqualException, NotExistsException;
+    boolean unsubscribe(String subscriberUsername, String posterUsername);
+
+    Optional<Subscription> findSubscription(String posterUsername, String subscriberUsername);
 
 }

@@ -2,44 +2,56 @@ package ru.combuddy.backend.controllers.user.service.impls;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.combuddy.backend.controllers.user.projections.account.RoleOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.projections.account.UsernameOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
+import ru.combuddy.backend.entities.user.PrivacyPolicy;
 import ru.combuddy.backend.entities.user.UserAccount;
-import ru.combuddy.backend.entities.user.UserRole;
 import ru.combuddy.backend.entities.user.UserInfo;
 import ru.combuddy.backend.exceptions.AlreadyExistsException;
 import ru.combuddy.backend.exceptions.NotExistsException;
 import ru.combuddy.backend.repositories.user.UserAccountRepository;
-import ru.combuddy.backend.repositories.user.UserRoleRepository;
-import ru.combuddy.backend.repositories.user.UserInfoRepository;
+import ru.combuddy.backend.security.entities.Role;
 import ru.combuddy.backend.security.repositories.RoleRepository;
 
+import java.text.MessageFormat;
 import java.util.*;
-import java.util.function.Function;
+
+import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_USER;
 
 @Service
-@Transactional
 @AllArgsConstructor
 public class UserAccountServiceImpl implements UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
-    private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
-    private final UserInfoRepository userInfoRepository;
 
     @Override
     public UserAccount createDefaultUser(String username) throws AlreadyExistsException {
         if (userAccountRepository.existsByUsername(username)) {
-            throw new AlreadyExistsException("User account with username %s already exists".formatted(username));
+            throw new AlreadyExistsException(
+                    MessageFormat.format("User account with username {0} already exists",
+                            username),
+                    username);
         }
-        var userAccount = new UserAccount(username);
-        var userRole = roleRepository.findByName("ROLE_USER").get();
-        var userAccountRole = userRoleRepository.save(new UserRole(null, userAccount, userRole));
-        userAccount.setUserRoles(Set.of(userAccountRole));
-        var userInfo = userInfoRepository.save(new UserInfo(userAccount));
+        var userAccount = new UserAccount();
+        userAccount.setUsername(username);
+        var role = roleRepository.findByName(ROLE_USER).get();
+        userAccount.setRole(role);
+        var userInfo = new UserInfo(userAccount);
         userAccount.setUserInfo(userInfo);
+        var privacyPolicy = new PrivacyPolicy(userAccount);
+        userAccount.setPrivacyPolicy(privacyPolicy);
         return userAccountRepository.save(userAccount);
+    }
+
+    @Override
+    public boolean exists(String username) {
+        return userAccountRepository.existsByUsername(username);
     }
 
     @Override
@@ -47,12 +59,19 @@ public class UserAccountServiceImpl implements UserAccountService {
         return userAccountRepository.findByUsername(username);
     }
 
+
+    @Override
+    public Optional<Role> findRoleByUsername(String username) {
+        return userAccountRepository.findRoleByUsername(username)
+                .map(RoleOnlyUserAccountProjection::getRole);
+    }
+
+    @Transactional
     @Override
     public void updateFrozenState(boolean frozen, String username) throws NotExistsException {
         var foundUserAccount = userAccountRepository.findByUsername(username);
         if (foundUserAccount.isEmpty()) {
-            throw new NotExistsException("User account with username %s doesn't exist, so can't be frozen"
-                    .formatted(username));
+            throwUserNotExists(username, "frozen candidate");
         }
         var userAccount = foundUserAccount.get();
         userAccount.setFrozen(frozen);
@@ -60,16 +79,9 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
     @Override
-    public boolean exists(String username) {
-        return userAccountRepository.findByUsername(username).isPresent();
-    }
-
-    @Override
-    public void delete(String username) throws NotExistsException {
-        if (userAccountRepository.deleteByUsername(username) == 0) {
-            throw new NotExistsException("User account with username %s doesn't exist, so can't be frozen"
-                    .formatted(username));
-        }
+    public boolean delete(String username) {
+        var deletedCount = userAccountRepository.deleteByUsername(username);
+        return deletedCount > 0;
     }
 
     @Override
@@ -80,31 +92,17 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
     @Override
-    public boolean isFrozen(String username) {
-        return userAccountRepository.findFrozenByUsername(username).getFrozen();
-    }
-
-    @Deprecated
-    public static <Returned>Optional<List<String>> getUsernamesWithAskerExistenceCheck(
-            Function<Returned, String> returnedToUsernameConverter,
-            List<Returned> returnedList,
-            String askerUsername,
-            UserAccountService userAccountRepository) {
-        var usernamesList = returnedList.stream()
-                .map(returnedToUsernameConverter)
-                .toList();
-        if (usernamesList.isEmpty() && !userAccountRepository.exists(askerUsername)) {
-            return Optional.empty();
+    public boolean isFrozen(String username) throws NotExistsException {
+        var foundFrozen = userAccountRepository.findFrozenByUsername(username);
+        if (foundFrozen.isEmpty()) {
+            throwUserNotExists(username, "frozen check candidate");
         }
-        return Optional.of(usernamesList);
+        return foundFrozen.get().getFrozen();
     }
 
-    @Deprecated
-    public static <Returned>List<String> getUsernames(
-            Function<Returned, String> returnedToUsernameConverter,
-            List<Returned> returnedList) {
-        return returnedList.stream()
-                .map(returnedToUsernameConverter)
-                .toList();
+    @Override
+    public void replaceRole(UserAccount receiver, Role.RoleName roleName) throws NotExistsException {
+        receiver.setRole(roleRepository.findByName(roleName).get());
+        userAccountRepository.save(receiver);
     }
 }

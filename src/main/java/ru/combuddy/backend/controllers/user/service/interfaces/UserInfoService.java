@@ -2,7 +2,7 @@ package ru.combuddy.backend.controllers.user.service.interfaces;
 
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import ru.combuddy.backend.controllers.user.models.UserPublicInfo;
+import ru.combuddy.backend.controllers.user.models.UserProfileInfo;
 import ru.combuddy.backend.entities.user.UserInfo;
 import ru.combuddy.backend.exceptions.NotExistsException;
 
@@ -26,7 +26,7 @@ public interface UserInfoService {
     /**
      * @throws NotExistsException if user with this username doesn't exist
      */
-    UserPublicInfo getPublicInfo(String username) throws NotExistsException;
+    UserProfileInfo getAllInfo(String targetUsername, String askerUsername) throws NotExistsException;
 
     UserInfo save(UserInfo userInfo);
 }

@@ -8,8 +8,6 @@ import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountServic
 
 import java.text.MessageFormat;
 
-import static ru.combuddy.backend.entities.user.UserAccount.getRoles;
-
 @Component
 @AllArgsConstructor
 public class BaseAuthUserDetailsService implements UserDetailsService {
@@ -21,14 +19,14 @@ public class BaseAuthUserDetailsService implements UserDetailsService {
         var foundUserAccount = userAccountService.findByUsername(username);
         if (foundUserAccount.isEmpty()) {
             throw new UsernameNotFoundException(
-                    new MessageFormat("User with username {0} not found").format(username));
+                    new MessageFormat("User with username {0} is not found").format(username));
         }
         var userAccount = foundUserAccount.get();
         return BaseAuthUserDetails.builder()
                 .username(username)
                 .password(userAccount.getBaseAuth().getEncryptedPassword())
                 .isLocked(userAccount.getFrozen())
-                .roles(getRoles(userAccount))
+                .roleName(userAccount.getRole().getName())
                 .build();
     }
 }

@@ -11,14 +11,13 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.user.models.LoginResponse;
-import ru.combuddy.backend.controllers.user.service.interfaces.UserRoleService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserBaseAuthService;
 import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.exceptions.AlreadyExistsException;
+import ru.combuddy.backend.repositories.user.UserAccountRepository;
+import ru.combuddy.backend.security.repositories.RoleRepository;
 import ru.combuddy.backend.security.repositories.WorkingRefreshTokenRepository;
-
-import static ru.combuddy.backend.entities.user.UserAccount.getRoles;
 
 @RestController
 @RequestMapping("/api/user/auth")
@@ -26,7 +25,6 @@ import static ru.combuddy.backend.entities.user.UserAccount.getRoles;
 public class AuthController {
 
     private final UserAccountService userAccountService;
-    private final UserRoleService userRoleService;
     private final UserBaseAuthService userBaseAuthService;
     private final WorkingRefreshTokenRepository workingRefreshTokenRepository;
 
@@ -39,7 +37,7 @@ public class AuthController {
             userAccount = userAccountService.createDefaultUser(username);
         } catch (AlreadyExistsException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "User with this username already exist");
+                    "User with this username already exists");
         }
         return userBaseAuthService.create(userAccount.getUsername(), password);
     }
@@ -54,7 +52,7 @@ public class AuthController {
         }
         var userAccount = foundUserAccount.get();
         try {
-            return userBaseAuthService.login(userAccount.getUsername(), getRoles(userAccount), password);
+            return userBaseAuthService.login(userAccount.getUsername(), userAccount.getRole().getName(), password);
         } catch (LockedException e) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Account is frozen");
@@ -88,12 +86,18 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "Refresh token has compromised. You should log in again");
         }
-        var refreshedRoles = userRoleService.getRoles(username);
-        return userBaseAuthService.generateLoginResponse(username, refreshedRoles);
+        var foundRefreshedRole = userAccountService.findRoleByUsername(username);
+        if (foundRefreshedRole.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "User doesn't exist now");
+        }
+        var refreshedRole = foundRefreshedRole.get();
+        return userBaseAuthService.generateLoginResponse(username, refreshedRole.getName());
     }
 
     @PostMapping("/logout")
     @PreAuthorize("true")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
     public void logout(Authentication authentication) {
         var username = authentication.getName();

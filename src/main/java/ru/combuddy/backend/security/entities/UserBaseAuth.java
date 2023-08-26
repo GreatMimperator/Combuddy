@@ -18,8 +18,9 @@ public class UserBaseAuth {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", unique = true, nullable = false)
     private UserAccount userAccount;
 
+    @Column(nullable = false)
     private String encryptedPassword;
 }

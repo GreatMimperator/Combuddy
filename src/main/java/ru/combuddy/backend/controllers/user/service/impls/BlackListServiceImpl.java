@@ -15,43 +15,49 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 
-import static ru.combuddy.backend.controllers.user.service.impls.UserAccountServiceImpl.getUsernames;
-import static ru.combuddy.backend.controllers.user.service.impls.UserAccountServiceImpl.getUsernamesWithAskerExistenceCheck;
-
 @Service
-@Transactional
 @AllArgsConstructor
 public class BlackListServiceImpl implements BlackListService {
 
     private BlackListRepository blackListRepository;
-    private UserAccountService userAccountRepository;
+    private UserAccountService userAccountService;
 
+    @Transactional
     @Override
-    public void add(String aggressorUsername, String defendedUsername) throws ShouldNotBeEqualException, NotExistsException {
+    public void add(String aggressorUsername, String defendedUsername)
+            throws ShouldNotBeEqualException, NotExistsException {
         usernamesEqualCheck(aggressorUsername, defendedUsername);
-        var foundAggressor = userAccountRepository.findByUsername(aggressorUsername);
-        var foundDefended = userAccountRepository.findByUsername(defendedUsername);
-        foundCheck(foundAggressor, aggressorUsername, foundDefended, defendedUsername);
-        var blackListRecord = new BlackList(null,
-                foundAggressor.get(),
-                foundDefended.get());
-        var aggressorId = blackListRecord.getAggressor().getId();
-        var defendedId = blackListRecord.getDefended().getId();
-        if (blackListRepository.existsByAggressorIdAndDefendedId(aggressorId, defendedId)) {
+        var aggressor = userAccountService.getByUsername(aggressorUsername, "aggressor");
+        var defended = userAccountService.getByUsername(defendedUsername, "defended");
+        if (blackListRepository.existsByAggressorIdAndDefendedId(aggressor.getId(), defended.getId())) {
             return;
         }
-        blackListRepository.save(blackListRecord);
+        blackListRepository.save(new BlackList(null, aggressor, defended));
     }
 
     @Override
-    public void remove(String aggressorUsername, String defendedUsername) throws ShouldNotBeEqualException, NotExistsException {
-        usernamesEqualCheck(aggressorUsername, defendedUsername);
-        var foundAggressor = userAccountRepository.findByUsername(aggressorUsername);
-        var foundDefended = userAccountRepository.findByUsername(defendedUsername);
-        foundCheck(foundAggressor, aggressorUsername, foundDefended, defendedUsername);
-        var aggressorId = foundAggressor.get().getId();
-        var defendedId = foundDefended.get().getId();
-        blackListRepository.deleteByDefendedIdAndAggressorId(defendedId, aggressorId);
+    public boolean delete(String aggressorUsername, String defendedUsername) {
+        var deletedCount = blackListRepository.deleteByAggressorUsernameAndDefendedUsername(
+                aggressorUsername,
+                defendedUsername);
+        return deletedCount > 0;
+    }
+
+    @Transactional
+    @Override
+    public List<String> getAggressorUsernames(String defendedUsername) {
+        var aggressorUsernames = blackListRepository
+                .findAggressorUsernamesByDefendedUsername(defendedUsername);
+        return aggressorUsernames.stream()
+                .map(r -> r.getAggressor().getUsername())
+                .toList();
+    }
+
+    @Override
+    public Optional<BlackList> findRecord(String aggressorUsername, String defendedUsername) {
+        return blackListRepository.findByAggressorUsernameAndDefendedUsername(
+                aggressorUsername,
+                defendedUsername);
     }
 
     /**
@@ -64,32 +70,5 @@ public class BlackListServiceImpl implements BlackListService {
                     MessageFormat.format("aggressor and defended usernames are equal ({0})",
                             aggressorUsername));
         }
-    }
-
-    /**
-     * @throws NotExistsException if aggressor or defended are empty
-     */
-    private void foundCheck(Optional<UserAccount> foundAggressor, String aggressorQueryUsername,
-                            Optional<UserAccount> foundDefended, String defendedQueryUsername)
-            throws NotExistsException {
-        if (foundAggressor.isEmpty()) {
-            throw new NotExistsException(
-                    MessageFormat.format("Aggressor {0} doesn't exist",
-                            aggressorQueryUsername));
-        }
-        if (foundDefended.isEmpty()) {
-            throw new NotExistsException(
-                    MessageFormat.format("Defended {0} doesn't exist",
-                            defendedQueryUsername));
-        }
-    }
-
-    @Override
-    public List<String> getAggressorUsernames(String defendedUsername) {
-        var aggressorUsernames = blackListRepository
-                .findAggressorUsernamesByDefendedUsername(defendedUsername);
-        return aggressorUsernames.stream()
-                .map(r -> r.getAggressor().getUsername())
-                .toList();
     }
 }

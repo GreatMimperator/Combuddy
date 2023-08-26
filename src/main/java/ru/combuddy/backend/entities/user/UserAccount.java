@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.security.authorization.AuthorityAuthorizationDecision;
 import ru.combuddy.backend.entities.complain.post.PostComplaintJudgment;
 import ru.combuddy.backend.entities.complain.post.PostComplaint;
 import ru.combuddy.backend.entities.complain.user.UserComplaint;
@@ -25,7 +26,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Entity
-@JsonPropertyOrder({"id", "username", "frozen", "userInfo"})
 @Data
 @EqualsAndHashCode(of = "id")
 @NoArgsConstructor
@@ -33,12 +33,7 @@ public class UserAccount {
     public static final int MIN_USERNAME_LENGTH = 5;
     public static final int MAX_USERNAME_LENGTH = 35;
 
-    public UserAccount(Long id) {
-        this.id = id;
-    }
-
     public UserAccount(String username) {
-        this((Long) null);
         setUsername(username);
     }
 
@@ -58,11 +53,14 @@ public class UserAccount {
     @Column(nullable = false)
     private Boolean frozen = false;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "userAccount")
-    private Set<UserRole> userRoles;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Role role;
 
-    @OneToOne(cascade = CascadeType.ALL, optional = false, fetch = FetchType.LAZY, mappedBy = "userAccount")
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "userAccount")
     private UserInfo userInfo;
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "userAccount")
+    private PrivacyPolicy privacyPolicy;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "userAccount")
     private UserBaseAuth baseAuth;
@@ -115,9 +113,4 @@ public class UserAccount {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "sender")
     private List<PublicMessage> publicMessages;
 
-    public static Set<Role> getRoles(UserAccount userAccount) {
-        return userAccount.getUserRoles().stream()
-                .map(UserRole::getRole)
-                .collect(Collectors.toSet());
-    }
 }

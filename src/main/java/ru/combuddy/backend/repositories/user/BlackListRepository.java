@@ -9,8 +9,18 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BlackListRepository extends CrudRepository<BlackList, Long> {
-    List<BlackListAggressorUsernameProjection> findAggressorUsernamesByDefendedUsername(String defendedUsername);
-    boolean existsByAggressorIdAndDefendedId(Long aggressorId, Long defendedId);
+    List<BlackListAggressorUsernameProjection> findAggressorUsernamesByDefendedUsername(
+            String defendedUsername);
 
-    void deleteByDefendedIdAndAggressorId(Long defendedId, Long aggressorId);
+    boolean existsByAggressorIdAndDefendedId(
+            Long aggressorId,
+            Long defendedId);
+
+    int deleteByAggressorUsernameAndDefendedUsername(
+            String aggressorUsername,
+            String defendedUsername);
+
+    Optional<BlackList> findByAggressorUsernameAndDefendedUsername(
+            String aggressorUsername,
+            String defendedUsername);
 }

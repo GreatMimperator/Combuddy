@@ -1,30 +1,29 @@
 package ru.combuddy.backend.controllers.user.service.impls;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import ru.combuddy.backend.controllers.user.models.UserPublicInfo;
+import ru.combuddy.backend.controllers.user.models.UserProfileInfo;
 import ru.combuddy.backend.controllers.user.projections.info.FullPictureProjection;
 import ru.combuddy.backend.controllers.user.projections.info.ThumbnailProjection;
+import ru.combuddy.backend.controllers.user.service.interfaces.SubscriptionService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
-import ru.combuddy.backend.entities.user.Subscription;
-import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.entities.user.UserInfo;
 import ru.combuddy.backend.exceptions.NotExistsException;
+import ru.combuddy.backend.repositories.user.PrivacyPolicyRepository;
 import ru.combuddy.backend.repositories.user.UserInfoRepository;
-import ru.combuddy.backend.security.entities.Role;
+import ru.combuddy.backend.security.verifiers.users.info.RegisteredDateAccessVerifier;
+import ru.combuddy.backend.security.verifiers.users.info.SubscriptionsAccessVerifier;
 import ru.combuddy.backend.util.ImageConverter;
 
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static ru.combuddy.backend.entities.user.UserAccount.getRoles;
 
 @Service
 @AllArgsConstructor
@@ -32,13 +31,20 @@ public class UserInfoServiceImpl implements UserInfoService {
 
     private UserInfoRepository userInfoRepository;
     private UserAccountService userAccountService;
+    private SubscriptionService subscriptionService;
+    private PrivacyPolicyRepository privacyPolicyRepository;
 
+    private SubscriptionsAccessVerifier subscriptionsAccessVerifier;
+    private RegisteredDateAccessVerifier registeredDateAccessVerifier;
+
+    @Transactional
     @Override
     public Optional<byte[]> getThumbnailBytes(String username) {
         return userInfoRepository.findThumbnailByUserAccountUsername(username)
                 .map(ThumbnailProjection::getPictureThumbnail);
     }
 
+    @Transactional
     @Override
     public Optional<byte[]> getFullPictureBytes(String username) {
         return userInfoRepository.findFullPictureByUserAccountUsername(username)
@@ -72,27 +78,36 @@ public class UserInfoServiceImpl implements UserInfoService {
         }
     }
 
+    @Transactional
     @Override
-    public UserPublicInfo getPublicInfo(String username) throws NotExistsException {
-        var foundUserAccount = userAccountService.findByUsername(username);
-        if (foundUserAccount.isEmpty()) {
-            throw new NotExistsException("User account with username %s doesn't exist".formatted(username)); // todo: formatted -> MessageFormat
+    public UserProfileInfo getAllInfo(String targetUsername, String askerUsername) throws NotExistsException {
+        var targetAccount = userAccountService.getByUsername(targetUsername, "target account");
+        var askerAccount = userAccountService.getByUsername(askerUsername, "asker account");
+        var privacyPolicy = privacyPolicyRepository
+                .findByUserAccountId(targetAccount.getId()).get();
+        var roleName = targetAccount.getRole().getName();
+        var builder = UserProfileInfo.builder()
+                .username(targetUsername)
+                .frozen(targetAccount.getFrozen())
+                .role(roleName.name());
+        var permittedToSee = new UserProfileInfo.PermittedToSee();
+        builder.permittedToSee(permittedToSee);
+        var subscriptionVerifyInfo = new SubscriptionsAccessVerifier.VerifyInfo(
+                targetAccount,
+                privacyPolicy.getSubscriptionsAccessLevel());
+        if (subscriptionsAccessVerifier.verify(askerAccount, subscriptionVerifyInfo)) {
+            permittedToSee.setSubscriptions(true);
+            var subscriptions = subscriptionService.getPosterUsernames(targetUsername);
+            builder.subscriptions(Optional.of(subscriptions));
         }
-        var userAccount = foundUserAccount.get();
-        var subscriptions = userAccount.getSubscriptions().stream()
-                .map(Subscription::getPoster)
-                .map(UserAccount::getUsername)
-                .toList();
-        var roles = getRoles(userAccount).stream()
-                .map(Role::getName)
-                .toList();
-        return UserPublicInfo.builder()
-                .username(username)
-                .frozen(userAccount.getFrozen())
-                .registeredDate(userAccount.getUserInfo().getRegisteredDate())
-                .roles(roles)
-                .subscriptions(subscriptions)
-                .build();
+        var registeredDateVerifyInfo = new RegisteredDateAccessVerifier.VerifyInfo(
+                targetAccount,
+                privacyPolicy.getRegisteredDateAccessLevel());
+        if (registeredDateAccessVerifier.verify(askerAccount, registeredDateVerifyInfo)) {
+            permittedToSee.setRegisteredDate(true);
+            builder.registeredDate(Optional.of(targetAccount.getUserInfo().getRegisteredDate()));
+        }
+        return builder.build();
     }
 
     @Override

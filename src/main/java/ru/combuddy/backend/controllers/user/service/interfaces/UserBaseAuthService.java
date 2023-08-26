@@ -4,13 +4,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import ru.combuddy.backend.controllers.user.models.LoginResponse;
-import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.exceptions.AlreadyExistsException;
 import ru.combuddy.backend.exceptions.NotExistsException;
 import ru.combuddy.backend.security.entities.Role;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.Set;
 
 public interface UserBaseAuthService {
 
@@ -26,7 +24,7 @@ public interface UserBaseAuthService {
      * @return loginResponse if password corresponds db password for this user
      * @throws AuthenticationException thrown inside by {@link AuthenticationManager#authenticate(Authentication)}
      */
-    LoginResponse login(String username, Collection<Role> roles, String password) throws AuthenticationException;
+    LoginResponse login(String username, Role.RoleName roleName, String password) throws AuthenticationException;
 
-    LoginResponse generateLoginResponse(String username, Collection<Role> roles);
+    LoginResponse generateLoginResponse(String username, Role.RoleName roleName);
 }

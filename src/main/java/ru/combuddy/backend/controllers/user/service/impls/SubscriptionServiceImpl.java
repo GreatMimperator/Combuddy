@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import ru.combuddy.backend.controllers.user.service.interfaces.SubscriptionService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.entities.user.Subscription;
-import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.exceptions.NotExistsException;
 import ru.combuddy.backend.exceptions.ShouldNotBeEqualException;
 import ru.combuddy.backend.repositories.user.SubscriptionRepository;
@@ -15,73 +14,38 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 
-import static ru.combuddy.backend.controllers.user.service.impls.UserAccountServiceImpl.getUsernames;
-import static ru.combuddy.backend.controllers.user.service.impls.UserAccountServiceImpl.getUsernamesWithAskerExistenceCheck;
-
 @Service
-@Transactional
 @AllArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
 
     private SubscriptionRepository subscriptionRepository;
     private UserAccountService userAccountService;
 
+    @Transactional
     @Override
     public void subscribe(String subscriberUsername, String posterUsername) throws ShouldNotBeEqualException, NotExistsException {
         usernamesEqualCheck(subscriberUsername, posterUsername);
-        var foundSubscriber = userAccountService.findByUsername(subscriberUsername);
-        var foundPoster = userAccountService.findByUsername(posterUsername);
-        foundCheck(foundSubscriber, subscriberUsername, foundPoster, posterUsername);
-        var subscription = new Subscription(null,
-                foundSubscriber.get(),
-                foundPoster.get());
-        var subscriberId = subscription.getSubscriber().getId();
-        var posterId = subscription.getPoster().getId();
-        if (subscriptionRepository.existsBySubscriberIdAndPosterId(subscriberId, posterId)) {
+        var subscriber = userAccountService.getByUsername(subscriberUsername, "subscriber");
+        var poster = userAccountService.getByUsername(posterUsername, "poster");
+        if (subscriptionRepository.existsBySubscriberIdAndPosterId(subscriber.getId(), poster.getId())) {
             return;
         }
-        subscriptionRepository.save(subscription);
+        subscriptionRepository.save(new Subscription(null, subscriber, poster));
     }
 
     @Override
-    public void unsubscribe(String subscriberUsername, String posterUsername) throws ShouldNotBeEqualException, NotExistsException {
-        usernamesEqualCheck(subscriberUsername, posterUsername);
-        var foundSubscriber = userAccountService.findByUsername(subscriberUsername);
-        var foundPoster = userAccountService.findByUsername(posterUsername);
-        foundCheck(foundSubscriber, subscriberUsername, foundPoster, posterUsername);
-        var subscriberId = foundSubscriber.get().getId();
-        var posterId = foundPoster.get().getId();
-        subscriptionRepository.deleteBySubscriberIdAndPosterId(subscriberId, posterId);
+    public boolean unsubscribe(String subscriberUsername, String posterUsername) {
+        var deletedCount = subscriptionRepository.deleteBySubscriberUsernameAndPosterUsername(
+                subscriberUsername,
+                posterUsername);
+        return deletedCount > 0;
     }
 
-    /**
-     * @throws ShouldNotBeEqualException if subscriber and poster usernames are equal
-     */
-    private void usernamesEqualCheck(String subscriberUsername, String posterUsername)
-            throws ShouldNotBeEqualException {
-        if (subscriberUsername.equals(posterUsername)) {
-            throw new ShouldNotBeEqualException(
-                    MessageFormat.format("Subscriber and poster usernames are equal ({0})",
-                            subscriberUsername));
-        }
-    }
-
-    /**
-     * @throws NotExistsException if subscriber or poster are empty
-     */
-    private void foundCheck(Optional<UserAccount> foundSubscriber, String subscriberQueryUsername,
-                                Optional<UserAccount> foundPoster, String posterQueryUsername)
-            throws NotExistsException {
-        if (foundSubscriber.isEmpty()) {
-            throw new NotExistsException(
-                    MessageFormat.format("Subscriber {0} doesn't exist",
-                            subscriberQueryUsername));
-        }
-        if (foundPoster.isEmpty()) {
-            throw new NotExistsException(
-                    MessageFormat.format("Poster {0} doesn't exist",
-                            posterQueryUsername));
-        }
+    @Override
+    public Optional<Subscription> findSubscription(String posterUsername, String subscriberUsername) {
+        return subscriptionRepository.findSubscriptionByPosterUsernameAndSubscriberUsername(
+                posterUsername,
+                subscriberUsername);
     }
 
     @Override
@@ -123,4 +87,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .toList();
     }
 
+    /**
+     * @throws ShouldNotBeEqualException if subscriber and poster usernames are equal
+     */
+    private void usernamesEqualCheck(String subscriberUsername, String posterUsername)
+            throws ShouldNotBeEqualException {
+        if (subscriberUsername.equals(posterUsername)) {
+            throw new ShouldNotBeEqualException(
+                    MessageFormat.format("subscriber and poster usernames are equal ({0})",
+                            subscriberUsername));
+        }
+    }
 }
