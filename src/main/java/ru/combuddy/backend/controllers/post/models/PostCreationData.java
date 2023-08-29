@@ -1,26 +1,44 @@
 package ru.combuddy.backend.controllers.post.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import com.fasterxml.jackson.annotation.*;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import ru.combuddy.backend.controllers.contact.models.BaseContactInfo;
 import ru.combuddy.backend.entities.post.Post;
+import ru.combuddy.backend.entities.post.tag.PostTag;
 import ru.combuddy.backend.entities.user.UserAccount;
 
-// todo: add related data (tags, postContacts, postUserContacts)
+import java.util.List;
+import java.util.Optional;
 
 @Data
-@JsonPropertyOrder({"posterUsername", "post"})
+@Builder
+@NoArgsConstructor
+@JsonPropertyOrder({"title", "body", "state", "tags", "postContacts", "postUserContacts"})
 public class PostCreationData {
 
-    @NotNull
-    @Size(min = UserAccount.MIN_USERNAME_LENGTH,
-            max = UserAccount.MAX_USERNAME_LENGTH)
-    @JsonProperty("poster_username")
-    private String posterUsername;
+    private String title;
+    private String body;
+    private Post.State state;
+    private List<String> tagNames;
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    private Optional<List<BaseContactInfo>> postContacts;
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    private Optional<List<BaseContactInfo>> postUserContacts;
 
-    @Valid
-    private Post post;
+    @JsonCreator
+    public PostCreationData(@JsonProperty("title") String title,
+                            @JsonProperty("body") String body,
+                            @JsonProperty("state") Post.State state,
+                            @JsonProperty("tagNames") List<String> tagNames,
+                            @JsonProperty("postContacts") Optional<List<BaseContactInfo>> postContacts,
+                            @JsonProperty("postUserContacts") Optional<List<BaseContactInfo>> postUserContacts) {
+        this.title = title;
+        this.body = body;
+        this.state = state;
+        this.tagNames = tagNames;
+        this.postContacts = postContacts;
+        this.postUserContacts = postUserContacts;
+    }
 }

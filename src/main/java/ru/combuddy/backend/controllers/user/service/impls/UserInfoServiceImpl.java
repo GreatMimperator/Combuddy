@@ -13,6 +13,8 @@ import ru.combuddy.backend.controllers.user.projections.info.ThumbnailProjection
 import ru.combuddy.backend.controllers.user.service.interfaces.SubscriptionService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
+import ru.combuddy.backend.controllers.contact.models.BaseContactInfo;
+import ru.combuddy.backend.entities.contact.BaseContact;
 import ru.combuddy.backend.entities.user.UserInfo;
 import ru.combuddy.backend.exceptions.NotExistsException;
 import ru.combuddy.backend.repositories.user.PrivacyPolicyRepository;
@@ -24,6 +26,7 @@ import ru.combuddy.backend.util.ImageConverter;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -86,10 +89,14 @@ public class UserInfoServiceImpl implements UserInfoService {
         var privacyPolicy = privacyPolicyRepository
                 .findByUserAccountId(targetAccount.getId()).get();
         var roleName = targetAccount.getRole().getName();
+        var contacts = targetAccount.getContacts().stream()
+                .map(BaseContactInfo::new)
+                .collect(Collectors.toSet());
         var builder = UserProfileInfo.builder()
                 .username(targetUsername)
                 .frozen(targetAccount.getFrozen())
-                .role(roleName.name());
+                .role(roleName.name())
+                .contacts(contacts);
         var permittedToSee = new UserProfileInfo.PermittedToSee();
         builder.permittedToSee(permittedToSee);
         var subscriptionVerifyInfo = new SubscriptionsAccessVerifier.VerifyInfo(

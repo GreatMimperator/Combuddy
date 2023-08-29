@@ -1,13 +1,11 @@
 package ru.combuddy.backend.entities.user;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.security.authorization.AuthorityAuthorizationDecision;
 import ru.combuddy.backend.entities.complain.post.PostComplaintJudgment;
 import ru.combuddy.backend.entities.complain.post.PostComplaint;
 import ru.combuddy.backend.entities.complain.user.UserComplaint;
@@ -17,13 +15,11 @@ import ru.combuddy.backend.entities.messaging.Dialog;
 import ru.combuddy.backend.entities.messaging.PublicMessage;
 import ru.combuddy.backend.entities.post.FavoritePost;
 import ru.combuddy.backend.entities.post.Post;
-import ru.combuddy.backend.entities.tag.UserHomeTag;
+import ru.combuddy.backend.entities.post.tag.UserHomeTag;
 import ru.combuddy.backend.security.entities.UserBaseAuth;
 import ru.combuddy.backend.security.entities.Role;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Entity
 @Data
@@ -43,7 +39,7 @@ public class UserAccount {
 
     @NotNull
     @Size(min = MIN_USERNAME_LENGTH,
-            max = MAX_USERNAME_LENGTH)
+            max = MAX_USERNAME_LENGTH) // todo: add this like to anything and catch exception everywhere
     @Column(length = MAX_USERNAME_LENGTH,
             unique = true,
             nullable = false)
@@ -68,7 +64,7 @@ public class UserAccount {
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "owner")
     private List<UserContact> contacts;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "user")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "user")
     private List<UserHomeTag> homeTags;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "subscriber")

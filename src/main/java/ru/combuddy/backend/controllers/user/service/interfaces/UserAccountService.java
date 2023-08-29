@@ -17,6 +17,8 @@ public interface UserAccountService {
 
     boolean exists(String username);
 
+    UserAccount save(UserAccount userAccount);
+
     Optional<UserAccount> findByUsername(String username);
 
     /**

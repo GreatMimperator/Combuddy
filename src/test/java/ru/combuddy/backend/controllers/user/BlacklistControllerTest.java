@@ -40,10 +40,12 @@ public class BlacklistControllerTest {
         var defendedUsername = RANDOM_USER_USERNAME;
         var loginResponse = loginPreconfigured(mockMvc, defendedUsername);
         var aggressorUsername = MODERATOR_USERNAME;
+        // adding
         blacklistControllerQueries.add(aggressorUsername, loginResponse.getAccessToken())
                 .andExpect(status().isNoContent());
         var blacklistRecord = blackListService.findRecord(aggressorUsername, defendedUsername);
         assert blacklistRecord.isPresent();
+        // removing
         blacklistControllerQueries.remove(aggressorUsername, loginResponse.getAccessToken())
                 .andExpect(status().isNoContent());
         blacklistRecord = blackListService.findRecord(aggressorUsername, defendedUsername);
@@ -53,12 +55,14 @@ public class BlacklistControllerTest {
     @Test
     public void aggressorsTest() throws Exception {
         var loginResponse = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
+        // adding
         var aggressorUsername = MODERATOR_USERNAME;
         blacklistControllerQueries.add(aggressorUsername, loginResponse.getAccessToken())
                 .andExpect(status().isNoContent());
         aggressorUsername = MAIN_MODERATOR_USERNAME;
         blacklistControllerQueries.add(aggressorUsername, loginResponse.getAccessToken())
                 .andExpect(status().isNoContent());
+        // getting
         var aggressorsJson = blacklistControllerQueries.aggressors(loginResponse.getAccessToken())
                 .andReturn().getResponse().getContentAsString();
         var aggressors = jsonToUsernamesList(aggressorsJson).getUsernames();

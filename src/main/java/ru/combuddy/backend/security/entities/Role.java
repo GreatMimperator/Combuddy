@@ -59,11 +59,11 @@ public class Role {
 
 
         /**
-         * Converts using name field of RoleName and ignoring case in equal check
+         * Converts using name() call of RoleName and ignoring case in equal check
          *
          * @throws NotExistsException if has not role with this name
          */
-        public static Role.RoleName convertToRoleName(String roleNameAsString) throws NotExistsException {
+        public static RoleName convertToRoleName(String roleNameAsString) throws NotExistsException {
             for (var roleName : RoleName.values()) {
                 if (roleName.name().equalsIgnoreCase(roleNameAsString)) {
                     return roleName;

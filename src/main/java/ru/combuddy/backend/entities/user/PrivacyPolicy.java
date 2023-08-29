@@ -31,7 +31,7 @@ public class PrivacyPolicy {
         this.userAccount = userAccount;
     }
 
-    public enum SubscriptionsAccessLevel {
+    public enum SubscriptionsAccessLevel { // todo: add changing
         NOBODY, EVERYBODY
     }
 

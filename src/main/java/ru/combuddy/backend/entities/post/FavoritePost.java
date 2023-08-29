@@ -32,4 +32,12 @@ public class FavoritePost {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false)
     private Calendar savedTime = Calendar.getInstance();
+
+    public FavoritePost(Long id, Post post, UserAccount subscriber) {
+        this.id = id;
+        this.post = post;
+        this.subscriber = subscriber;
+    }
+
+    // todo: leave here links to userAccount and post if needed
 }

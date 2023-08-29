@@ -1,16 +1,17 @@
-package ru.combuddy.backend.entities.tag;
+package ru.combuddy.backend.entities.post.tag;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import ru.combuddy.backend.entities.post.Post;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Entity
 @Data
+@NoArgsConstructor
 @EqualsAndHashCode(of = "id")
 public class Tag {
     private static final int MIN_NAME_LENGTH = 1;
@@ -31,6 +32,12 @@ public class Tag {
     @Size(min = MIN_DESCRIPTION_LENGTH, max = MAX_DESCRIPTION_LENGTH)
     @Column(length = MAX_DESCRIPTION_LENGTH)
     private String description;
+
+    public Tag(Long id, String name, String description) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+    }
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "tag")
     private List<PostTag> postTags;
