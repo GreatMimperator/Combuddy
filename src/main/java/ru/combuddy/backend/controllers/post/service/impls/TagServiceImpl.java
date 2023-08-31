@@ -2,9 +2,7 @@ package ru.combuddy.backend.controllers.post.service.impls;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.post.models.FilterTags;
 import ru.combuddy.backend.controllers.post.projections.TagNameProjection;
 import ru.combuddy.backend.controllers.post.service.interfaces.TagService;
@@ -14,16 +12,16 @@ import ru.combuddy.backend.entities.post.tag.PostTag;
 import ru.combuddy.backend.entities.post.tag.Tag;
 import ru.combuddy.backend.entities.post.tag.UserHomeTag;
 import ru.combuddy.backend.entities.user.UserAccount;
-import ru.combuddy.backend.exceptions.AlreadyExistsException;
+import ru.combuddy.backend.exceptions.tag.InvalidTagNameException;
+import ru.combuddy.backend.exceptions.tag.TagAlreadyExistsException;
+import ru.combuddy.backend.exceptions.user.UserNotExistsException;
 import ru.combuddy.backend.repositories.tag.TagRepository;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static ru.combuddy.backend.controllers.user.UserAccountController.checkFoundAccount;
 import static ru.combuddy.backend.entities.post.tag.UserHomeTag.FilterType.EXCLUDING;
 import static ru.combuddy.backend.entities.post.tag.UserHomeTag.FilterType.INCLUDING;
 
@@ -71,16 +69,11 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public Tag add(String name, String description) {
-        return tagRepository.save(new Tag(null, name, description));
-    }
-
-    @Override
-    public Tag addWithExistenceCheck(String name, String description) throws AlreadyExistsException {
-        if (tagRepository.existsByName(name)) {
-            throw new AlreadyExistsException("Tag with this name already exists", name);
+    public Tag add(String name, String description) throws TagAlreadyExistsException {
+        if (this.exists(name)) {
+            throw new TagAlreadyExistsException("Tag with this name already exists");
         }
-        return add(name, description);
+        return tagRepository.save(new Tag(null, name, description));
     }
 
     @Override
@@ -90,14 +83,28 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public List<PostTag> getPostTagsFromTagNames(List<String> tagNames, Post post)
-            throws IllegalArgumentException {
-        try {
-            return tagNames.stream()
-                    .map(tagName -> new PostTag(null, post, tagRepository.findByName(tagName).get()))
-                    .collect(Collectors.toCollection(LinkedList::new));
-        } catch (NoSuchElementException e) { // catches Optional.get()
-            throw new IllegalArgumentException("creationData contains wrong tag name in post tags list");
-        }
+            throws InvalidTagNameException {
+        return tagNames.stream()
+                .map(tagName ->
+                        new PostTag(
+                                null,
+                                post,
+                                this.getByName(tagName)))
+                .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    @Override
+    public List<PostTag> getPostTagsFromTags(List<Tag> tags, Post post) {
+        return tags.stream()
+                .map(tag -> new PostTag(null, post, tag))
+                .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    @Override
+    public List<Tag> getTagsFromHomeTags(List<UserHomeTag> homeTags) {
+        return homeTags.stream()
+                .map(UserHomeTag::getTag)
+                .collect(Collectors.toCollection(LinkedList::new));
     }
 
     @Override
@@ -109,21 +116,21 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public void homeTagsUpdate(List<String> includedTagNames, List<String> excludedTagNames, String updaterUsername) throws ResponseStatusException {
-        var updater = checkFoundAccount(userAccountService.findByUsername(updaterUsername));
-        try {
-            addNewHomeTagsRemoveNotActual(includedTagNames, excludedTagNames, updater);
-            userAccountService.save(updater);
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "At least one of included / excluded tags does not exist");
-        }
+    public void homeTagsUpdate(List<String> includedTagNames,
+                               List<String> excludedTagNames,
+                               String updaterUsername)
+            throws UserNotExistsException,
+            InvalidTagNameException {
+        var updater = userAccountService.getByUsername(updaterUsername);
+        addNewHomeTagsRemoveNotActual(includedTagNames, excludedTagNames, updater);
+        userAccountService.save(updater);
     }
 
     @Override
     public void addNewHomeTagsRemoveNotActual(List<String> actualIncludedHomeTags,
                                               List<String> actualExcludedHomeTags,
-                                              UserAccount updater) {
+                                              UserAccount updater)
+            throws InvalidTagNameException {
         var removedTags = new LinkedList<UserHomeTag>();
         for (var oldHomeTag : updater.getHomeTags()) {
             if (!isActual(actualIncludedHomeTags, actualExcludedHomeTags, oldHomeTag)) {
@@ -135,15 +142,21 @@ public class TagServiceImpl implements TagService {
         var remainingHomeTags = getTagNamesFromHomeTags(updater.getHomeTags());
         actualIncludedHomeTags.removeAll(remainingHomeTags);
         actualExcludedHomeTags.removeAll(remainingHomeTags);
-        updater.getHomeTags().addAll(getHomeTagsFromTagNames(actualIncludedHomeTags,
-                INCLUDING,
-                updater));
-        updater.getHomeTags().addAll(getHomeTagsFromTagNames(actualExcludedHomeTags,
-                EXCLUDING,
-                updater));
+        updater.getHomeTags().addAll(
+                getHomeTagsFromTagNames(
+                        actualIncludedHomeTags,
+                        INCLUDING,
+                        updater));
+        updater.getHomeTags().addAll(
+                getHomeTagsFromTagNames(
+                        actualExcludedHomeTags,
+                        EXCLUDING,
+                        updater));
     }
 
-    private static boolean isActual(List<String> actualIncludedHomeTags, List<String> actualExcludedHomeTags, UserHomeTag oldHomeTag) {
+    private static boolean isActual(List<String> actualIncludedHomeTags,
+                                    List<String> actualExcludedHomeTags,
+                                    UserHomeTag oldHomeTag) {
         boolean isActual = false;
         switch (oldHomeTag.getFilterType()) {
             case INCLUDING -> {
@@ -160,20 +173,19 @@ public class TagServiceImpl implements TagService {
         return isActual;
     }
 
-    public List<UserHomeTag> getHomeTagsFromTagNames(List<String> tags,
+    @Override
+    public List<UserHomeTag> getHomeTagsFromTagNames(List<String> tagNames,
                                                      UserHomeTag.FilterType filterType,
                                                      UserAccount userAccount)
-            throws IllegalArgumentException {
-        try {
-            return tags.stream()
-                    .map(tagName -> new UserHomeTag(null,
+            throws InvalidTagNameException {
+        return tagNames.stream()
+                .map(tagName ->
+                        new UserHomeTag(
+                            null,
                             userAccount,
-                            tagRepository.findByName(tagName).get(),
+                            this.getByName(tagName),
                             filterType))
-                    .collect(Collectors.toCollection(LinkedList::new));
-        } catch (NoSuchElementException e) { // catches Optional.get()
-            throw new IllegalArgumentException("creationData contains wrong tag name in post tags list");
-        }
+                .collect(Collectors.toCollection(LinkedList::new));
     }
 
     @Override
@@ -185,9 +197,13 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public FilterTags getHomeTags(String receiverUsername) throws ResponseStatusException {
-        var receiver = checkFoundAccount(userAccountService.findByUsername(receiverUsername));
-        var homeTags = receiver.getHomeTags();
+    public FilterTags getFilterTags(String receiverUsername) throws UserNotExistsException {
+        var receiver = userAccountService.getByUsername(receiverUsername);
+        return getFilterTags(receiver.getHomeTags());
+    }
+
+    @Override
+    public FilterTags getFilterTags(List<UserHomeTag> homeTags) {
         var includedTagNames = new LinkedList<String>();
         var excludedTagNames = new LinkedList<String>();
         for (var homeTag : homeTags) {
@@ -198,5 +214,33 @@ public class TagServiceImpl implements TagService {
             }
         }
         return new FilterTags(includedTagNames, excludedTagNames);
+    }
+
+    @Override
+    public Tag getByName(String name) throws InvalidTagNameException {
+        var foundTag = tagRepository.findByName(name);
+        if (foundTag.isEmpty()) {
+            throw new InvalidTagNameException("Tag with this name does not exist");
+        }
+        return foundTag.get();
+    }
+
+    @Override
+    public void put(String name, String description) {
+        if (!this.exists(name)) {
+            this.add(name, description);
+        }
+    }
+
+    @Override
+    public void updateDescription(String name, String description) throws InvalidTagNameException {
+        var tag = this.getByName(name);
+        tag.setDescription(description);
+        this.save(tag);
+    }
+
+    @Override
+    public String getDescription(String name) throws InvalidTagNameException {
+        return this.getByName(name).getDescription();
     }
 }

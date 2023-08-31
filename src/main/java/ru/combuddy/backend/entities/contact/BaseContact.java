@@ -1,13 +1,9 @@
 package ru.combuddy.backend.entities.contact;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.springframework.core.convert.ConversionFailedException;
-import org.springframework.core.convert.TypeDescriptor;
-import ru.combuddy.backend.exceptions.NotExistsException;
-import ru.combuddy.backend.security.entities.Role;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import ru.combuddy.backend.exceptions.contact.InvalidContactTypeException;
 
 import java.text.MessageFormat;
 
@@ -42,20 +38,19 @@ public class BaseContact {
         private final String validationRegex;
 
         /**
-         * Converts using name() call of ContactType and ignoring case in equal check
+         * Converts using {@link ContactType#name()} and ignoring case in equal check
          *
-         * @throws NotExistsException if has not contact type with this name
+         * @throws InvalidContactTypeException if contact type does not exist (annotated with {@link ResponseStatus})
          */
-        public static ContactType convertToContactType(String contactTypeAsString) throws NotExistsException {
+        public static ContactType convertToContactType(String contactTypeAsString) throws InvalidContactTypeException {
             for (var contactType : ContactType.values()) {
                 if (contactType.name().equalsIgnoreCase(contactTypeAsString)) {
                     return contactType;
                 }
             }
-            throw new NotExistsException(
+            throw new InvalidContactTypeException(
                     MessageFormat.format("Contact type {0} does not exist as enum value",
-                            contactTypeAsString),
-                    contactTypeAsString);
+                            contactTypeAsString));
 
         }
     }

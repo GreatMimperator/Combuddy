@@ -6,8 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.combuddy.backend.controllers.contact.models.BaseContactInfo;
 import ru.combuddy.backend.entities.post.Post;
-import ru.combuddy.backend.entities.post.tag.PostTag;
-import ru.combuddy.backend.entities.user.UserAccount;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,30 +13,30 @@ import java.util.Optional;
 @Data
 @Builder
 @NoArgsConstructor
-@JsonPropertyOrder({"title", "body", "state", "tags", "postContacts", "postUserContacts"})
+@JsonPropertyOrder({"title", "body", "state", "tags", "postContacts", "userContacts"})
 public class PostCreationData {
 
     private String title;
     private String body;
     private Post.State state;
-    private List<String> tagNames;
+    private List<String> tags;
     @JsonInclude(JsonInclude.Include.NON_ABSENT)
     private Optional<List<BaseContactInfo>> postContacts;
     @JsonInclude(JsonInclude.Include.NON_ABSENT)
-    private Optional<List<BaseContactInfo>> postUserContacts;
+    private Optional<List<BaseContactInfo>> userContacts;
 
     @JsonCreator
     public PostCreationData(@JsonProperty("title") String title,
                             @JsonProperty("body") String body,
                             @JsonProperty("state") Post.State state,
-                            @JsonProperty("tagNames") List<String> tagNames,
+                            @JsonProperty("tags") List<String> tags,
                             @JsonProperty("postContacts") Optional<List<BaseContactInfo>> postContacts,
-                            @JsonProperty("postUserContacts") Optional<List<BaseContactInfo>> postUserContacts) {
+                            @JsonProperty("userContacts") Optional<List<BaseContactInfo>> userContacts) {
         this.title = title;
         this.body = body;
         this.state = state;
-        this.tagNames = tagNames;
+        this.tags = tags;
         this.postContacts = postContacts;
-        this.postUserContacts = postUserContacts;
+        this.userContacts = userContacts;
     }
 }

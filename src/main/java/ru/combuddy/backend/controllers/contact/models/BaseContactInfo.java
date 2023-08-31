@@ -8,17 +8,15 @@ import lombok.NoArgsConstructor;
 import ru.combuddy.backend.entities.contact.BaseContact;
 import ru.combuddy.backend.entities.contact.BaseContact.ContactType;
 import ru.combuddy.backend.entities.contact.post.PostContact;
-import ru.combuddy.backend.entities.contact.user.UserContact;
 import ru.combuddy.backend.entities.post.Post;
-import ru.combuddy.backend.entities.user.UserAccount;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonPropertyOrder({"contactType", "contact"})
+@JsonPropertyOrder({"contactType", "value"})
 public class BaseContactInfo {
+    @JsonAlias("type")
     private ContactType contactType;
-    @JsonAlias("contact")
     private String value;
 
     public BaseContactInfo(BaseContact baseContact) {

@@ -4,16 +4,13 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.user.models.UsernamesList;
 import ru.combuddy.backend.controllers.user.service.interfaces.BlackListService;
-import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
-import ru.combuddy.backend.entities.user.UserAccount;
-import ru.combuddy.backend.exceptions.NotExistsException;
-import ru.combuddy.backend.exceptions.ShouldNotBeEqualException;
+
+import static ru.combuddy.backend.controllers.user.AuthController.getUsername;
 
 @RestController
-@RequestMapping("/api/user/blacklist")
+@RequestMapping("/api/v1/user/blacklist")
 @AllArgsConstructor
 public class BlackListController {
 
@@ -22,28 +19,20 @@ public class BlackListController {
     @PutMapping("/add/{aggressorUsername}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void add(@PathVariable String aggressorUsername, Authentication authentication) {
-        var defendedUsername = authentication.getName();
-        try {
-            blackListService.add(aggressorUsername, defendedUsername);
-        } catch (NotExistsException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Aggressor or defended username not found");
-        } catch (ShouldNotBeEqualException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Aggressor and defended usernames should not be equal");
-        }
+        var defendedUsername = getUsername(authentication);
+        blackListService.add(aggressorUsername, defendedUsername);
     }
 
-    @DeleteMapping("/remove/{aggressorUsername}")
+    @DeleteMapping("/delete/{aggressorUsername}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void remove(@PathVariable String aggressorUsername, Authentication authentication) {
-        var defendedUsername = authentication.getName();
+    public void delete(@PathVariable String aggressorUsername, Authentication authentication) {
+        var defendedUsername = getUsername(authentication);
         blackListService.delete(aggressorUsername, defendedUsername);
     }
 
     @GetMapping("/aggressors")
     public UsernamesList getAggressorsUsernames(Authentication authentication) {
-        var defendedUsername = authentication.getName();
+        var defendedUsername = getUsername(authentication);
         var aggressorsUsernames = blackListService.getAggressorUsernames(defendedUsername);
         return new UsernamesList(aggressorsUsernames);
     }

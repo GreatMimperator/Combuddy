@@ -1,44 +1,67 @@
 package ru.combuddy.backend.controllers.contact.service.interfaces;
 
-import org.springframework.web.util.pattern.PatternParseException;
 import ru.combuddy.backend.controllers.contact.models.BaseContactInfo;
 import ru.combuddy.backend.entities.contact.BaseContact.ContactType;
 import ru.combuddy.backend.entities.contact.user.UserContact;
-import ru.combuddy.backend.exceptions.NotExistsException;
-import ru.combuddy.backend.exceptions.RegexValidationException;
+import ru.combuddy.backend.exceptions.contact.InvalidContactValueException;
+import ru.combuddy.backend.exceptions.contact.NotFoundUserContactException;
+import ru.combuddy.backend.exceptions.contact.UserContactAlreadyExistsException;
+import ru.combuddy.backend.exceptions.user.UserNotExistsException;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface UserContactService {
     /**
-     * You should put {@code contact} already checked with {@code contactType} regex <br>
-     * If you want exception to be thrown on check fail - use {@link #add(String, ContactType, String)}
-     *
-     * @throws NotExistsException if user with this {@code ownerUsername} does not exist
+     * Checks {@code contact} with {@code contactType} regex <br>
      */
-    UserContact addChecked(String ownerUsername,
-                                  ContactType contactType,
-                                  String contact)
-            throws NotExistsException;
+    void check(ContactType contactType, String contact) throws InvalidContactValueException;
 
     /**
-     * Checks {@code contact} with {@code contactType} regex <br>
+     * You should put {@code contact} already checked with {@code contactType} regex <br>
+     * If you want exception to be thrown on check fail - use {@link #add(String, ContactType, String)}
+     */
+    UserContact addChecked(String ownerUsername,
+                           ContactType contactType,
+                           String contact)
+            throws UserNotExistsException,
+            UserContactAlreadyExistsException;
+
+    /**
+     * Checks with {@link #check(ContactType, String)} before adding <br>
      * If you have already provided this check - use {@link #addChecked(String, ContactType, String)}
-     *
-     * @throws NotExistsException if user with this {@code ownerUsername} does not exist
-     * @throws RegexValidationException if {@code contact} failed {@code contactType} regex check
      */
     UserContact add(String ownerUsername,
                     ContactType contactType,
                     String contact)
-            throws NotExistsException, RegexValidationException;
+                    throws UserNotExistsException,
+                    UserContactAlreadyExistsException;
 
-    boolean exists(String ownerUsername, String contact);
+    boolean exists(String ownerUsername,
+                   ContactType contactType,
+                   String contact);
 
-    boolean delete(String ownerUsername, ContactType contactType, String contact);
+    boolean delete(String ownerUsername,
+                   ContactType contactType,
+                   String contact);
 
-    Optional<UserContact> find(String ownerUsername, ContactType contactType, String contact);
+    Optional<UserContact> find(String ownerUsername,
+                               ContactType contactType,
+                               String contact);
+
+    UserContact get(String ownerUsername,
+                    ContactType contactType,
+                    String contact)
+            throws NotFoundUserContactException;
 
     List<UserContact> getAll(String username);
+
+    void putChecked(String ownerUsername,
+                    ContactType contactType,
+                    String contact);
+
+    /**
+     * @return modifiable list
+     */
+    List<BaseContactInfo> toBaseContacts(List<UserContact> userContacts);
 }

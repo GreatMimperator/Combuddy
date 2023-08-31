@@ -1,7 +1,6 @@
 package ru.combuddy.backend.repositories.tag;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.CrudRepository;
 import ru.combuddy.backend.controllers.post.projections.TagNameProjection;
 import ru.combuddy.backend.entities.post.tag.Tag;
 

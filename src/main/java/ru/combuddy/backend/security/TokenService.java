@@ -65,7 +65,7 @@ public class TokenService {
                 .id(uuid)
                 .build();
         workingRefreshTokenRepository.deleteByOwnerUsername(username);
-        entityManager.flush();
+        entityManager.flush(); // todo: think about solution more
         workingRefreshTokenRepository.save(new WorkingRefreshToken(null, username, uuid));
         return claimsToJwt(claims);
     }

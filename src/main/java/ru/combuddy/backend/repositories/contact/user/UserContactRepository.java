@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserContactRepository extends CrudRepository<UserContact, Long> {
-    boolean existsByOwnerUsernameAndValue(String ownerUsername, String value);
+    boolean existsByOwnerUsernameAndContactTypeAndValue(String ownerUsername, ContactType contactType, String contact);
 
     int deleteByOwnerUsernameAndContactTypeAndValue(String ownerUsername, ContactType contactType, String contact);
 

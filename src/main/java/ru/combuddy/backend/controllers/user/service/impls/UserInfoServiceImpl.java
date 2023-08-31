@@ -3,66 +3,72 @@ package ru.combuddy.backend.controllers.user.service.impls;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
+import ru.combuddy.backend.controllers.contact.service.interfaces.UserContactService;
 import ru.combuddy.backend.controllers.user.models.UserProfileInfo;
-import ru.combuddy.backend.controllers.user.projections.info.FullPictureProjection;
-import ru.combuddy.backend.controllers.user.projections.info.ThumbnailProjection;
 import ru.combuddy.backend.controllers.user.service.interfaces.SubscriptionService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
-import ru.combuddy.backend.controllers.contact.models.BaseContactInfo;
-import ru.combuddy.backend.entities.contact.BaseContact;
 import ru.combuddy.backend.entities.user.UserInfo;
-import ru.combuddy.backend.exceptions.NotExistsException;
+import ru.combuddy.backend.exceptions.files.FIleWeightException;
+import ru.combuddy.backend.exceptions.files.UnsupportedPictureException;
+import ru.combuddy.backend.exceptions.user.UserNotExistsException;
 import ru.combuddy.backend.repositories.user.PrivacyPolicyRepository;
 import ru.combuddy.backend.repositories.user.UserInfoRepository;
 import ru.combuddy.backend.security.verifiers.users.info.RegisteredDateAccessVerifier;
 import ru.combuddy.backend.security.verifiers.users.info.SubscriptionsAccessVerifier;
 import ru.combuddy.backend.util.ImageConverter;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @AllArgsConstructor
 public class UserInfoServiceImpl implements UserInfoService {
 
-    private UserInfoRepository userInfoRepository;
-    private UserAccountService userAccountService;
-    private SubscriptionService subscriptionService;
-    private PrivacyPolicyRepository privacyPolicyRepository;
+    private final UserInfoRepository userInfoRepository;
+    private final PrivacyPolicyRepository privacyPolicyRepository; // todo: in service?
+    private final UserAccountService userAccountService;
+    private final SubscriptionService subscriptionService;
+    private final UserContactService userContactService;
 
-    private SubscriptionsAccessVerifier subscriptionsAccessVerifier;
-    private RegisteredDateAccessVerifier registeredDateAccessVerifier;
+    private final SubscriptionsAccessVerifier subscriptionsAccessVerifier;
+    private final RegisteredDateAccessVerifier registeredDateAccessVerifier;
 
-    @Transactional
     @Override
-    public Optional<byte[]> getThumbnailBytes(String username) {
-        return userInfoRepository.findThumbnailByUserAccountUsername(username)
-                .map(ThumbnailProjection::getPictureThumbnail);
-    }
-
-    @Transactional
-    @Override
-    public Optional<byte[]> getFullPictureBytes(String username) {
-        return userInfoRepository.findFullPictureByUserAccountUsername(username)
-                .map(FullPictureProjection::getFullPicture);
+    public InputStream getProfilePictureThumbnail(String username) {
+        var foundThumbnail = userInfoRepository.findThumbnailByUserAccountUsername(username);
+        if (foundThumbnail.isEmpty()) {
+            throw new UserNotExistsException("User that profile full picture requested does not exist");
+        }
+        return new ByteArrayInputStream(foundThumbnail.get().getPictureThumbnail());
     }
 
     @Override
-    public void addFullAndThumbnailPictures(UserInfo userInfo, MultipartFile imageMultipartFile) throws ResponseStatusException, IOException {
-        var pngData = ImageConverter.convertImage(imageMultipartFile.getBytes(), "png");
+    public InputStream getFullProfilePicture(String username) throws UserNotExistsException {
+        var foundFullPicture = userInfoRepository.findFullPictureByUserAccountUsername(username);
+        if (foundFullPicture.isEmpty()) {
+            throw new UserNotExistsException("User that profile full picture requested does not exist");
+        }
+        return new ByteArrayInputStream(foundFullPicture.get().getFullPicture());
+    }
+
+    @Override
+    public void addFullAndThumbnailPictures(UserInfo userInfo,
+                                            InputStream pictureStream)
+            throws IOException,
+            UnsupportedPictureException,
+            FIleWeightException {
+        var pngData = ImageConverter.convertImage(pictureStream, "png");
         if (pngData == null) {
-            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-                    "Picture has unsupported extension");
+            throw new UnsupportedPictureException("Picture has unsupported extension");
         }
         if (!UserInfo.isFullPictureSize(pngData.getWidth(), pngData.getHeight())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new UnsupportedPictureException(
                     MessageFormat.format("Picture should have resolution {0}x{1} px",
                             UserInfo.PICTURE_FULL_PICTURE_SIZE_PX,
                             UserInfo.PICTURE_FULL_PICTURE_SIZE_PX));
@@ -76,34 +82,28 @@ public class UserInfoServiceImpl implements UserInfoService {
                     "png");
             userInfo.setPictureThumbnail(thumbnailPngBytes);
         } catch (ValidationException e) {
-            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE,
-                    "Too big picture of its generated thumbnail");
+            throw new FIleWeightException("Too big full picture or picture of its generated thumbnail");
         }
     }
 
-    @Transactional
     @Override
-    public UserProfileInfo getAllInfo(String targetUsername, String askerUsername) throws NotExistsException {
-        var targetAccount = userAccountService.getByUsername(targetUsername, "target account");
-        var askerAccount = userAccountService.getByUsername(askerUsername, "asker account");
+    public UserProfileInfo getAllInfo(String targetUsername, String askerUsername)
+            throws UserNotExistsException {
+        var targetAccount = userAccountService.getByUsername(targetUsername);
+        var askerAccount = userAccountService.getByUsername(askerUsername);
         var privacyPolicy = privacyPolicyRepository
                 .findByUserAccountId(targetAccount.getId()).get();
         var roleName = targetAccount.getRole().getName();
-        var contacts = targetAccount.getContacts().stream()
-                .map(BaseContactInfo::new)
-                .collect(Collectors.toSet());
+        var baseContacts = userContactService.toBaseContacts(targetAccount.getContacts());
         var builder = UserProfileInfo.builder()
                 .username(targetUsername)
                 .frozen(targetAccount.getFrozen())
                 .role(roleName.name())
-                .contacts(contacts);
-        var permittedToSee = new UserProfileInfo.PermittedToSee();
-        builder.permittedToSee(permittedToSee);
+                .contacts(baseContacts);
         var subscriptionVerifyInfo = new SubscriptionsAccessVerifier.VerifyInfo(
                 targetAccount,
                 privacyPolicy.getSubscriptionsAccessLevel());
         if (subscriptionsAccessVerifier.verify(askerAccount, subscriptionVerifyInfo)) {
-            permittedToSee.setSubscriptions(true);
             var subscriptions = subscriptionService.getPosterUsernames(targetUsername);
             builder.subscriptions(Optional.of(subscriptions));
         }
@@ -111,7 +111,6 @@ public class UserInfoServiceImpl implements UserInfoService {
                 targetAccount,
                 privacyPolicy.getRegisteredDateAccessLevel());
         if (registeredDateAccessVerifier.verify(askerAccount, registeredDateVerifyInfo)) {
-            permittedToSee.setRegisteredDate(true);
             builder.registeredDate(Optional.of(targetAccount.getUserInfo().getRegisteredDate()));
         }
         return builder.build();
@@ -120,5 +119,17 @@ public class UserInfoServiceImpl implements UserInfoService {
     @Override
     public UserInfo save(UserInfo userInfo) {
         return userInfoRepository.save(userInfo);
+    }
+
+    @Override
+    public void setProfilePicture(InputStream pictureInputStream, String username)
+            throws IOException,
+            UserNotExistsException,
+            UnsupportedPictureException,
+            FIleWeightException {
+        var userAccount = userAccountService.getByUsername(username);
+        var userInfo = userAccount.getUserInfo();
+        this.addFullAndThumbnailPictures(userInfo, pictureInputStream);
+        this.save(userInfo);
     }
 }

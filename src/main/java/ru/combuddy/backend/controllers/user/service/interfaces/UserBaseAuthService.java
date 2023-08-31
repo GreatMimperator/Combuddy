@@ -1,30 +1,42 @@
 package ru.combuddy.backend.controllers.user.service.interfaces;
 
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import ru.combuddy.backend.controllers.user.models.LoginResponse;
-import ru.combuddy.backend.exceptions.AlreadyExistsException;
-import ru.combuddy.backend.exceptions.NotExistsException;
+import ru.combuddy.backend.exceptions.user.UserAlreadyExistsException;
+import ru.combuddy.backend.exceptions.user.UserNotExistsException;
+import ru.combuddy.backend.exceptions.user.authentication.*;
 import ru.combuddy.backend.security.entities.Role;
 
-import java.util.Set;
-
 public interface UserBaseAuthService {
+    LoginResponse create(String username, String password)
+        throws UserNotExistsException,
+            UserAuthDataExistsException,
+            AccountIsFrozenException,
+            UserAuthenticationException;
 
-    /**
-     * @return loginResponse of created account
-     * @throws AuthenticationException thrown inside by {@link AuthenticationManager#authenticate(Authentication)} (not expected to be thrown)
-     * @throws NotExistsException if user account with this id not exists
-     * @throws AlreadyExistsException if user account already has base auth
-     */
-    LoginResponse create(String username, String password) throws NotExistsException, AlreadyExistsException, AuthenticationException;
+    LoginResponse login(String username,
+                        Role.RoleName roleName,
+                        String password)
+        throws AccountIsFrozenException,
+            UserAuthenticationException;
 
-    /**
-     * @return loginResponse if password corresponds db password for this user
-     * @throws AuthenticationException thrown inside by {@link AuthenticationManager#authenticate(Authentication)}
-     */
-    LoginResponse login(String username, Role.RoleName roleName, String password) throws AuthenticationException;
+    LoginResponse login(String username, String password)
+        throws UserNotExistsException,
+            AccountIsFrozenException,
+            UserAuthenticationException;
 
     LoginResponse generateLoginResponse(String username, Role.RoleName roleName);
+
+    LoginResponse registerUser(String username, String password)
+        throws UserAlreadyExistsException,
+            UserAuthDataExistsException,
+            AccountIsFrozenException,
+            UserAuthenticationException;
+
+    LoginResponse refreshToken(JwtAuthenticationToken jwtRefreshToken, String username)
+        throws RefreshTokenNotFoundException,
+            CompromisedRefreshTokenException,
+            UserNotExistsException;
+
+    void logout(String username);
 }

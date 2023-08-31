@@ -2,9 +2,8 @@ package ru.combuddy.backend.security.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.stereotype.Component;
 import ru.combuddy.backend.entities.user.UserAccount;
-import ru.combuddy.backend.exceptions.NotExistsException;
+import ru.combuddy.backend.exceptions.user.InvalidRoleNameException;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -35,44 +34,22 @@ public class Role {
 
         private final int authorityOrderMarker;
 
-        @Component
-        public static class AuthorityComparator implements Comparator<RoleName> {
-            @Override
-            public int compare(RoleName first, RoleName second) {
-                return Integer.compare(
-                        first.getAuthorityOrderMarker(),
-                        second.getAuthorityOrderMarker());
-            }
-
-            public int compare(UserAccount first, RoleName secondRoleName) {
-                var firstRoleName = first.getRole().getName();
-                return compare(firstRoleName, secondRoleName);
-            }
-
-            public int compare(UserAccount first, UserAccount second) {
-                var firstRoleName = first.getRole().getName();
-                var secondRoleName = second.getRole().getName();
-                return compare(firstRoleName, secondRoleName);
-            }
-        }
-
-
 
         /**
-         * Converts using name() call of RoleName and ignoring case in equal check
+         * Converts using {@link #name()} and ignoring case in equal check
          *
-         * @throws NotExistsException if has not role with this name
+         * @throws InvalidRoleNameException if role name does not exist
          */
-        public static RoleName convertToRoleName(String roleNameAsString) throws NotExistsException {
+        public static RoleName convertToRoleName(String roleNameAsString) throws InvalidRoleNameException {
             for (var roleName : RoleName.values()) {
                 if (roleName.name().equalsIgnoreCase(roleNameAsString)) {
                     return roleName;
                 }
             }
-            throw new NotExistsException(
+            throw new InvalidRoleNameException(
                     MessageFormat.format("Role name {0} does not exist as enum value",
-                            roleNameAsString),
-                    roleNameAsString);
+                            roleNameAsString));
         }
     }
+
 }

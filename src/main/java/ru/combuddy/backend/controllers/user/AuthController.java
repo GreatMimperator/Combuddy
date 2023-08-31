@@ -1,107 +1,60 @@
 package ru.combuddy.backend.controllers.user;
 
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.user.models.LoginResponse;
-import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserBaseAuthService;
-import ru.combuddy.backend.entities.user.UserAccount;
-import ru.combuddy.backend.exceptions.AlreadyExistsException;
-import ru.combuddy.backend.repositories.user.UserAccountRepository;
-import ru.combuddy.backend.security.repositories.RoleRepository;
-import ru.combuddy.backend.security.repositories.WorkingRefreshTokenRepository;
+import ru.combuddy.backend.exceptions.user.authentication.InvalidAuthenticationException;
 
 @RestController
-@RequestMapping("/api/user/auth")
+@RequestMapping("/api/v1/user/auth")
 @AllArgsConstructor
 public class AuthController {
 
-    private final UserAccountService userAccountService;
     private final UserBaseAuthService userBaseAuthService;
-    private final WorkingRefreshTokenRepository workingRefreshTokenRepository;
 
     @PostMapping("/register/{username}")
     @ResponseStatus(HttpStatus.CREATED)
-    @Transactional
     public LoginResponse register(@PathVariable String username, @RequestParam String password) {
-        UserAccount userAccount;
-        try {
-            userAccount = userAccountService.createDefaultUser(username);
-        } catch (AlreadyExistsException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "User with this username already exists");
-        }
-        return userBaseAuthService.create(userAccount.getUsername(), password);
+        return userBaseAuthService.registerUser(username, password);
     }
 
     @PostMapping("/login/{username}")
-    @Transactional
     public LoginResponse login(@PathVariable String username, @RequestParam String password) {
-        var foundUserAccount = userAccountService.findByUsername(username);
-        if (foundUserAccount.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "User with this username doesn't exist");
-        }
-        var userAccount = foundUserAccount.get();
-        try {
-            return userBaseAuthService.login(userAccount.getUsername(), userAccount.getRole().getName(), password);
-        } catch (LockedException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Account is frozen");
-        } catch (AuthenticationException e) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Authentication error");
-        }
+        return userBaseAuthService.login(username, password);
     }
 
     @PostMapping("/refresh-token")
     @PreAuthorize("true")
-    @Transactional
     public LoginResponse refreshToken(Authentication authentication) {
-        JwtAuthenticationToken jwtAuthenticationToken;
+        JwtAuthenticationToken jwtRefreshToken;
         try {
-            jwtAuthenticationToken = (JwtAuthenticationToken) authentication;
+            jwtRefreshToken = (JwtAuthenticationToken) authentication;
         } catch (ClassCastException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Need refresh token authentication");
+            throw new InvalidAuthenticationException("Need refresh token in authentication");
         }
-        var username = jwtAuthenticationToken.getName();
-        var foundWorkingRefreshToken = workingRefreshTokenRepository.getByOwnerUsername(username);
-        if (foundWorkingRefreshToken.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Refresh token is not presented in our database");
-        }
-        var workingRefreshToken = foundWorkingRefreshToken.get();
-        var jwtId = jwtAuthenticationToken.getToken().getId();
-        if (!workingRefreshToken.getJwtId().equals(jwtId)) {
-            workingRefreshTokenRepository.delete(workingRefreshToken);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "Refresh token has compromised. You should log in again");
-        }
-        var foundRefreshedRole = userAccountService.findRoleByUsername(username);
-        if (foundRefreshedRole.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "User doesn't exist now");
-        }
-        var refreshedRole = foundRefreshedRole.get();
-        return userBaseAuthService.generateLoginResponse(username, refreshedRole.getName());
+        var username = getUsername(jwtRefreshToken);
+        return userBaseAuthService.refreshToken(jwtRefreshToken, username);
     }
 
     @PostMapping("/logout")
     @PreAuthorize("true")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Transactional
     public void logout(Authentication authentication) {
-        var username = authentication.getName();
-        workingRefreshTokenRepository.deleteByOwnerUsername(username);
+        var username = getUsername(authentication);
+        userBaseAuthService.logout(username);
     }
 
+
+    public static String getUsername(Authentication authentication) {
+        return authentication.getName();
+    }
+
+    public static String getUsername(JwtAuthenticationToken jwtAuthenticationToken) {
+        return jwtAuthenticationToken.getName();
+    }
 }

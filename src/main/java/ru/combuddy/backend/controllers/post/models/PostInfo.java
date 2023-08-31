@@ -15,14 +15,15 @@ import java.util.Optional;
 @Builder
 @NoArgsConstructor
 @JsonPropertyOrder({"id", "ownerUsername", "title", "body",
-        "state", "tagNames", "postContacts", "postUserContacts"})
+        "state", "tags", "postContacts", "postUserContacts",
+        "creationDate", "modificationDate", "postedDate"})
 public class PostInfo {
     private Long id;
     private String ownerUsername;
     private String title;
     private String body;
     private Post.State state;
-    private List<String> tagNames;
+    private List<String> tags;
     private List<BaseContactInfo> postContacts;
     private List<BaseContactInfo> postUserContacts;
     private Optional<Calendar> creationDate;
@@ -36,7 +37,7 @@ public class PostInfo {
                     @JsonProperty("title") String title,
                     @JsonProperty("body") String body,
                     @JsonProperty("state") Post.State state,
-                    @JsonProperty("tagNames") List<String> tagNames,
+                    @JsonProperty("tags") List<String> tags,
                     @JsonProperty("postContacts") List<BaseContactInfo> postContacts,
                     @JsonProperty("postUserContacts") List<BaseContactInfo> postUserContacts,
                     @JsonProperty("creationDate") Optional<Calendar> creationDate,
@@ -47,7 +48,7 @@ public class PostInfo {
         this.title = title;
         this.body = body;
         this.state = state;
-        this.tagNames = tagNames;
+        this.tags = tags;
         this.postContacts = postContacts;
         this.postUserContacts = postUserContacts;
         this.creationDate = creationDate;

@@ -1,6 +1,5 @@
 package ru.combuddy.backend.entities.user;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -13,7 +12,6 @@ import java.util.Calendar;
 
 @Entity
 @Table(indexes = @Index(columnList = "user_id"))
-@JsonPropertyOrder({"id", "userAccount", "registeredDate", "moderator", "mainModerator"}) // todo: как я могу это в json, вдруг там данные приватные?
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
@@ -29,7 +27,7 @@ public class UserInfo {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name="user_id", /*unique = true,*/ nullable = false)
+    @JoinColumn(name="user_id", unique = true, nullable = false)
     private UserAccount userAccount;
 
     @NotNull

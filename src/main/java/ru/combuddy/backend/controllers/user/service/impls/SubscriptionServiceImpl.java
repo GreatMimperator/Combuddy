@@ -6,31 +6,33 @@ import org.springframework.stereotype.Service;
 import ru.combuddy.backend.controllers.user.service.interfaces.SubscriptionService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.entities.user.Subscription;
-import ru.combuddy.backend.exceptions.NotExistsException;
-import ru.combuddy.backend.exceptions.ShouldNotBeEqualException;
+import ru.combuddy.backend.exceptions.permission.user.SelfActionException;
+import ru.combuddy.backend.exceptions.user.UserNotExistsException;
 import ru.combuddy.backend.repositories.user.SubscriptionRepository;
 
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 @AllArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
 
-    private SubscriptionRepository subscriptionRepository;
-    private UserAccountService userAccountService;
+    private final SubscriptionRepository subscriptionRepository;
+    private final UserAccountService userAccountService;
 
-    @Transactional
     @Override
-    public void subscribe(String subscriberUsername, String posterUsername) throws ShouldNotBeEqualException, NotExistsException {
-        usernamesEqualCheck(subscriberUsername, posterUsername);
-        var subscriber = userAccountService.getByUsername(subscriberUsername, "subscriber");
-        var poster = userAccountService.getByUsername(posterUsername, "poster");
-        if (subscriptionRepository.existsBySubscriberIdAndPosterId(subscriber.getId(), poster.getId())) {
-            return;
+    public void subscribe(String subscriberUsername, String posterUsername)
+            throws UserNotExistsException,
+            SelfActionException {
+        var subscriber = userAccountService.getByUsername(subscriberUsername);
+        var poster = userAccountService.getByUsername(posterUsername);
+        if (subscriber.equals(poster)) {
+            throw new SelfActionException("Can not subscribe to yourself");
         }
-        subscriptionRepository.save(new Subscription(null, subscriber, poster));
+        if (!this.exists(subscriber.getId(), poster.getId())) {
+            subscriptionRepository.save(new Subscription(null, subscriber, poster));
+        }
     }
 
     @Override
@@ -87,15 +89,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .toList();
     }
 
-    /**
-     * @throws ShouldNotBeEqualException if subscriber and poster usernames are equal
-     */
-    private void usernamesEqualCheck(String subscriberUsername, String posterUsername)
-            throws ShouldNotBeEqualException {
-        if (subscriberUsername.equals(posterUsername)) {
-            throw new ShouldNotBeEqualException(
-                    MessageFormat.format("subscriber and poster usernames are equal ({0})",
-                            subscriberUsername));
-        }
+    @Override
+    public boolean exists(Long subscriberId, Long posterId) {
+        return subscriptionRepository.existsBySubscriberIdAndPosterId(subscriberId, posterId);
     }
 }

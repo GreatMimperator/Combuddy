@@ -1,6 +1,6 @@
 package ru.combuddy.backend.queries.user;
 
-import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
@@ -13,20 +13,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static ru.combuddy.backend.controllers.user.AuthControllerTest.bearer;
 
 @Service
-@NoArgsConstructor
+@AllArgsConstructor
 public class UserInfoControllerQueries {
 
-    MockMvc mockMvc;
-    ResourceLoader resourceLoader;
-
-    public UserInfoControllerQueries(MockMvc mockMvc, ResourceLoader resourceLoader) {
-        this.mockMvc = mockMvc;
-        this.resourceLoader = resourceLoader;
-    }
+    private final MockMvc mockMvc;
+    private final ResourceLoader resourceLoader;
 
     public ResultActions all(String receiveUsername, String askerAccessToken) throws Exception {
         return this.mockMvc.perform(bearer(
-                get("/api/user/info/all/{receiveUsername}", receiveUsername),
+                get("/api/v1/user/info/all/{receiveUsername}", receiveUsername),
                 askerAccessToken));
     }
 
@@ -38,21 +33,21 @@ public class UserInfoControllerQueries {
         var pictureStream = pictureResource.getInputStream();
         var picture = new MockMultipartFile("picture", pictureStream);
         return this.mockMvc.perform(bearer(
-                multipart("/api/user/info/set-profile-picture")
+                multipart("/api/v1/user/info/set-profile-picture")
                         .file(picture),
                 senderAccessToken));
     }
 
     public ResultActions fullPicture(String username, String askerAccessToken) throws Exception {
         return this.mockMvc.perform(bearer(
-                get("/api/user/info/full-picture/{username}", username),
+                get("/api/v1/user/info/full-picture/{username}", username),
                 askerAccessToken));
 
     }
 
     public ResultActions thumbnail(String username, String askerAccessToken) throws Exception {
         return this.mockMvc.perform(bearer(
-                get("/api/user/info/thumbnail/{username}", username),
+                get("/api/v1/user/info/thumbnail/{username}", username),
                 askerAccessToken));
     }
 }

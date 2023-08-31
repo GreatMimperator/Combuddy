@@ -15,6 +15,7 @@ import ru.combuddy.backend.queries.user.BlacklistControllerQueries;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.combuddy.backend.Util.listEqualsIgnoreOrder;
 import static ru.combuddy.backend.controllers.user.AuthControllerTest.*;
 import static ru.combuddy.backend.controllers.user.UserAccountControllerTest.jsonToUsernamesList;
 
@@ -38,15 +39,15 @@ public class BlacklistControllerTest {
     @Transactional
     public void addRemoveTest() throws Exception {
         var defendedUsername = RANDOM_USER_USERNAME;
-        var loginResponse = loginPreconfigured(mockMvc, defendedUsername);
+        var defendedAccessToken = loginPreconfigured(mockMvc, defendedUsername);
         var aggressorUsername = MODERATOR_USERNAME;
         // adding
-        blacklistControllerQueries.add(aggressorUsername, loginResponse.getAccessToken())
+        blacklistControllerQueries.add(aggressorUsername, defendedAccessToken)
                 .andExpect(status().isNoContent());
         var blacklistRecord = blackListService.findRecord(aggressorUsername, defendedUsername);
         assert blacklistRecord.isPresent();
         // removing
-        blacklistControllerQueries.remove(aggressorUsername, loginResponse.getAccessToken())
+        blacklistControllerQueries.delete(aggressorUsername, defendedAccessToken)
                 .andExpect(status().isNoContent());
         blacklistRecord = blackListService.findRecord(aggressorUsername, defendedUsername);
         assert blacklistRecord.isEmpty();
@@ -54,20 +55,19 @@ public class BlacklistControllerTest {
 
     @Test
     public void aggressorsTest() throws Exception {
-        var loginResponse = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
+        var defendedAccessToken = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
         // adding
         var aggressorUsername = MODERATOR_USERNAME;
-        blacklistControllerQueries.add(aggressorUsername, loginResponse.getAccessToken())
+        blacklistControllerQueries.add(aggressorUsername, defendedAccessToken)
                 .andExpect(status().isNoContent());
         aggressorUsername = MAIN_MODERATOR_USERNAME;
-        blacklistControllerQueries.add(aggressorUsername, loginResponse.getAccessToken())
+        blacklistControllerQueries.add(aggressorUsername, defendedAccessToken)
                 .andExpect(status().isNoContent());
-        // getting
-        var aggressorsJson = blacklistControllerQueries.aggressors(loginResponse.getAccessToken())
+        // receiving
+        var aggressorsJson = blacklistControllerQueries.aggressors(defendedAccessToken)
                 .andReturn().getResponse().getContentAsString();
         var aggressors = jsonToUsernamesList(aggressorsJson).getUsernames();
         var expectedAggressors = List.of(MODERATOR_USERNAME, MAIN_MODERATOR_USERNAME);
-        assert aggressors.containsAll(expectedAggressors) &&
-                expectedAggressors.containsAll(aggressors);
+        assert listEqualsIgnoreOrder(aggressors, expectedAggressors);
     }
 }

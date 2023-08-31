@@ -1,7 +1,6 @@
 package ru.combuddy.backend.entities.user;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -37,7 +36,6 @@ public class UserAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
     @Size(min = MIN_USERNAME_LENGTH,
             max = MAX_USERNAME_LENGTH) // todo: add this like to anything and catch exception everywhere
     @Column(length = MAX_USERNAME_LENGTH,
@@ -45,7 +43,6 @@ public class UserAccount {
             nullable = false)
     private String username;
 
-    @NotNull
     @Column(nullable = false)
     private Boolean frozen = false;
 
@@ -109,4 +106,13 @@ public class UserAccount {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "sender")
     private List<PublicMessage> publicMessages;
 
+    @Override
+    public String toString() {
+        return "UserAccount{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", frozen=" + frozen +
+                ", role=" + role.getName() +
+                '}';
+    }
 }

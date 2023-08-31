@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import ru.combuddy.backend.entities.user.UserAccount;
 
 import java.util.Calendar;
 

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
 import ru.combuddy.backend.entities.user.UserAccount;
+import ru.combuddy.backend.security.AuthorityComparator;
 import ru.combuddy.backend.security.entities.Role;
 import ru.combuddy.backend.security.verifiers.PermissionVerifier;
 

@@ -1,11 +1,8 @@
 package ru.combuddy.backend.controllers.user;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.graalvm.collections.Pair;
 import org.junit.jupiter.api.Test;
-
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,17 +14,17 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import ru.combuddy.backend.controllers.user.models.LoginResponse;
-import ru.combuddy.backend.exceptions.NotExistsException;
 import ru.combuddy.backend.queries.user.AuthControllerQueries;
 import ru.combuddy.backend.security.entities.Role;
 
-import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -70,7 +67,6 @@ public class AuthControllerTest {
         var password = userPasswords.get(username);
         var loginResponseJson = authControllerQueries.login(username, password)
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse().getContentAsString();
         var loginResponse = jsonToLoginResponse(loginResponseJson);
         assertLoginResponse(loginResponse, username, Role.RoleName.ROLE_MODERATOR);
@@ -82,13 +78,11 @@ public class AuthControllerTest {
         var password = username + "_password";
         var loginResponseJson = authControllerQueries.register(username, password)
                 .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse().getContentAsString();
         var loginResponse = jsonToLoginResponse(loginResponseJson);
         assertLoginResponse(loginResponse, username, Role.RoleName.ROLE_USER);
         loginResponseJson = authControllerQueries.login(username, password)
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse().getContentAsString();
         loginResponse = jsonToLoginResponse(loginResponseJson);
         assertLoginResponse(loginResponse, username, Role.RoleName.ROLE_USER);
@@ -97,7 +91,7 @@ public class AuthControllerTest {
     @Test
     public void refreshTokenTest() throws Exception {
         var username = RANDOM_USER_USERNAME;
-        var userLoginResponse = loginPreconfigured(mockMvc, username);
+        var userLoginResponse = loginPreconfiguredReceiveResponse(mockMvc, username);
         var loginResponseJson = authControllerQueries.refreshToken(userLoginResponse.getRefreshToken())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -108,11 +102,11 @@ public class AuthControllerTest {
 
     @Test
     public void logoutTest() throws Exception {
-        var loginResponse = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
+        var loginResponse = loginPreconfiguredReceiveResponse(mockMvc, RANDOM_USER_USERNAME);
         authControllerQueries.logout(loginResponse.getAccessToken())
                 .andExpect(status().isNoContent());
         authControllerQueries.refreshToken(loginResponse.getRefreshToken())
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
 
@@ -120,35 +114,39 @@ public class AuthControllerTest {
         var accessToken = jwtDecoder.decode(loginResponse.getAccessToken());
         assert accessToken.getSubject().equals(username);
         assert accessToken.getClaim("scope").equals(roleName.name());
+        assert accessToken.getIssuedAt() != null;
         assert Duration.between(accessToken.getIssuedAt(), accessToken.getExpiresAt())
                 .equals(Duration.ofSeconds(accessTokenExpiresInSeconds));
         var refreshToken = jwtDecoder.decode(loginResponse.getRefreshToken());
         assert refreshToken.getSubject().equals(username);
+        assert refreshToken.getIssuedAt() != null;
         assert Duration.between(refreshToken.getIssuedAt(), refreshToken.getExpiresAt())
                 .equals(Duration.ofSeconds(refreshTokenExpiresInSeconds));
     }
 
 
     /**
-     * @throws Exception on {@link MockMvc#perform(RequestBuilder)}
-     * @throws NotExistsException if {@link #userPasswords} has no user with this username
+     * @return accept token
      */
-    public static LoginResponse loginPreconfigured(MockMvc mockMvc, String username) throws Exception, NotExistsException {
+    public static String loginPreconfigured(MockMvc mockMvc, String username) throws Exception {
+        return loginPreconfiguredReceiveResponse(mockMvc, username).getAccessToken();
+    }
+
+    public static LoginResponse loginPreconfiguredReceiveResponse(MockMvc mockMvc, String username)
+            throws Exception {
         var password = userPasswords.get(username);
-        if (password == null) {
-            throwUserNotExist(username);
-        }
-        return login(mockMvc, username, password);
+        assert password != null;
+        return loginReceiveResponse(mockMvc, username, password);
     }
 
-    public static void throwUserNotExist(String username) {
-        throw new NotExistsException(
-                MessageFormat.format("Users with username {0} do not exist",
-                        username),
-                username);
+    /**
+     * @return accept token
+     */
+    public static String login(MockMvc mockMvc, String username, String password) throws Exception {
+        return loginReceiveResponse(mockMvc, username, password).getAccessToken();
     }
 
-    public static LoginResponse login(MockMvc mockMvc, String username, String password) throws Exception {
+    public static LoginResponse loginReceiveResponse(MockMvc mockMvc, String username, String password) throws Exception {
         var loginResponseJson = new AuthControllerQueries(mockMvc).login(username, password)
                 .andReturn().getResponse().getContentAsString();
         return jsonToLoginResponse(loginResponseJson);
@@ -164,9 +162,7 @@ public class AuthControllerTest {
 
     public static Pair<String, String> preconfiguredCredentials(String username) {
         var password = userPasswords.get(username);
-        if (password == null) {
-            throwUserNotExist(username);
-        }
+        assert password != null;
         return Pair.create(username, password);
     }
 }

@@ -6,6 +6,6 @@ import ru.combuddy.backend.security.entities.WorkingRefreshToken;
 import java.util.Optional;
 
 public interface WorkingRefreshTokenRepository extends CrudRepository<WorkingRefreshToken, Long> {
-    Optional<WorkingRefreshToken> getByOwnerUsername(String ownerUsername);
+    Optional<WorkingRefreshToken> findByOwnerUsername(String ownerUsername);
     void deleteByOwnerUsername(String ownerUsername);
 }

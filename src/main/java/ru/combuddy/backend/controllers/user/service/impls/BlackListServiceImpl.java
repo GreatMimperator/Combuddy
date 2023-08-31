@@ -6,33 +6,33 @@ import org.springframework.stereotype.Service;
 import ru.combuddy.backend.controllers.user.service.interfaces.BlackListService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.entities.user.BlackList;
-import ru.combuddy.backend.entities.user.UserAccount;
-import ru.combuddy.backend.exceptions.NotExistsException;
-import ru.combuddy.backend.exceptions.ShouldNotBeEqualException;
+import ru.combuddy.backend.exceptions.permission.user.SelfActionException;
+import ru.combuddy.backend.exceptions.user.UserNotExistsException;
 import ru.combuddy.backend.repositories.user.BlackListRepository;
 
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 @AllArgsConstructor
 public class BlackListServiceImpl implements BlackListService {
 
     private BlackListRepository blackListRepository;
     private UserAccountService userAccountService;
 
-    @Transactional
     @Override
     public void add(String aggressorUsername, String defendedUsername)
-            throws ShouldNotBeEqualException, NotExistsException {
-        usernamesEqualCheck(aggressorUsername, defendedUsername);
-        var aggressor = userAccountService.getByUsername(aggressorUsername, "aggressor");
-        var defended = userAccountService.getByUsername(defendedUsername, "defended");
-        if (blackListRepository.existsByAggressorIdAndDefendedId(aggressor.getId(), defended.getId())) {
-            return;
+            throws UserNotExistsException,
+            SelfActionException {
+        var aggressor = userAccountService.getByUsername(aggressorUsername);
+        var defended = userAccountService.getByUsername(defendedUsername);
+        if (aggressor.equals(defended)) {
+            throw new SelfActionException("Can not add this to black list");
         }
-        blackListRepository.save(new BlackList(null, aggressor, defended));
+        if (!this.exists(aggressor.getId(), defended.getId())) {
+            blackListRepository.save(new BlackList(null, aggressor, defended));
+        }
     }
 
     @Override
@@ -60,15 +60,10 @@ public class BlackListServiceImpl implements BlackListService {
                 defendedUsername);
     }
 
-    /**
-     * @throws ShouldNotBeEqualException if aggressor and defended usernames are equal
-     */
-    private void usernamesEqualCheck(String aggressorUsername, String defendedUsername)
-            throws ShouldNotBeEqualException {
-        if (aggressorUsername.equals(defendedUsername)) {
-            throw new ShouldNotBeEqualException(
-                    MessageFormat.format("aggressor and defended usernames are equal ({0})",
-                            aggressorUsername));
-        }
+    @Override
+    public boolean exists(Long aggressorId, Long defendedId) {
+        return blackListRepository.existsByAggressorIdAndDefendedId(
+                aggressorId,
+                defendedId);
     }
 }

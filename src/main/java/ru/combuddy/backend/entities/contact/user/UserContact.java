@@ -1,13 +1,10 @@
 package ru.combuddy.backend.entities.contact.user;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import ru.combuddy.backend.entities.contact.BaseContact;
-import ru.combuddy.backend.entities.contact.post.PostContact;
 import ru.combuddy.backend.entities.contact.post.PostUserContact;
 import ru.combuddy.backend.entities.user.UserAccount;
 

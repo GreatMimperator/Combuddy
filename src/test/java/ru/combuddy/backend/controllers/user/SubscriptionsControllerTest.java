@@ -15,6 +15,7 @@ import ru.combuddy.backend.queries.user.SubscriptionsControllerQueries;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.combuddy.backend.Util.listEqualsIgnoreOrder;
 import static ru.combuddy.backend.controllers.user.AuthControllerTest.*;
 import static ru.combuddy.backend.controllers.user.UserAccountControllerTest.jsonToUsernamesList;
 
@@ -38,16 +39,16 @@ public class SubscriptionsControllerTest {
     public void subscribeUnsubscribeTest() throws Exception {
         var subscriberUsername = MODERATOR_USERNAME;
         var posterUsername = MAIN_MODERATOR_USERNAME;
-        var subscriberLoginResponse = loginPreconfigured(mockMvc, MODERATOR_USERNAME);
+        var subscriberAccessToken = loginPreconfigured(mockMvc, MODERATOR_USERNAME);
         var subscription = subscriptionService.findSubscription(posterUsername, subscriberUsername);
         assert subscription.isEmpty();
         // subscribe
-        subscriptionsControllerQueries.subscribe(posterUsername, subscriberLoginResponse.getAccessToken())
+        subscriptionsControllerQueries.subscribe(posterUsername, subscriberAccessToken)
                 .andExpect(status().isNoContent());
         subscription = subscriptionService.findSubscription(posterUsername, subscriberUsername);
         assert subscription.isPresent();
         // unsubscribe
-        subscriptionsControllerQueries.unsubscribe(posterUsername, subscriberLoginResponse.getAccessToken())
+        subscriptionsControllerQueries.unsubscribe(posterUsername, subscriberAccessToken)
                 .andExpect(status().isNoContent());
         subscription = subscriptionService.findSubscription(posterUsername, subscriberUsername);
         assert subscription.isEmpty();
@@ -55,43 +56,39 @@ public class SubscriptionsControllerTest {
 
     @Test
     public void subscriptionsTest() throws Exception {
-        var loginResponse = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
-        var userSubscriptionsJson = subscriptionsControllerQueries.subscriptions(loginResponse.getAccessToken())
+        var accessToken = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
+        var userSubscriptionsJson = subscriptionsControllerQueries.subscriptions(accessToken)
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         var userSubscriptions = jsonToUsernamesList(userSubscriptionsJson).getUsernames();
         var expectedSubscriptions = List.of(MODERATOR_USERNAME, ANOTHER_MODERATOR_USERNAME);
-        assert userSubscriptions.containsAll(expectedSubscriptions) &&
-                expectedSubscriptions.containsAll(userSubscriptions);
+        assert listEqualsIgnoreOrder(userSubscriptions, expectedSubscriptions);
         var userSubscriptionsBeginWithMJson = subscriptionsControllerQueries.subscriptionsBeginWith(
                 "m",
-                        loginResponse.getAccessToken())
+                        accessToken)
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         var userSubscriptionsBeginWithM = jsonToUsernamesList(userSubscriptionsBeginWithMJson).getUsernames();
         expectedSubscriptions = List.of(MODERATOR_USERNAME);
-        assert userSubscriptionsBeginWithM.containsAll(expectedSubscriptions) &&
-                expectedSubscriptions.containsAll(userSubscriptionsBeginWithM);
+        assert listEqualsIgnoreOrder(userSubscriptionsBeginWithM, expectedSubscriptions);
     }
 
     @Test
     public void subscribersTest() throws Exception {
-        var loginResponse = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
-        var userSubscribersJson = subscriptionsControllerQueries.subscribers(loginResponse.getAccessToken())
+        var accessToken = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
+        var userSubscribersJson = subscriptionsControllerQueries.subscribers(accessToken)
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         var userSubscribers = jsonToUsernamesList(userSubscribersJson).getUsernames();
         var expectedSubscribers = List.of(MODERATOR_USERNAME, MAIN_MODERATOR_USERNAME, ANOTHER_MODERATOR_USERNAME);
-        assert userSubscribers.containsAll(expectedSubscribers) &&
-                expectedSubscribers.containsAll(userSubscribers);
+        assert listEqualsIgnoreOrder(userSubscribers, expectedSubscribers);
         var userSubscribersBeginWithMJson = subscriptionsControllerQueries.subscribersBeginWith(
                         "m",
-                        loginResponse.getAccessToken())
+                        accessToken)
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         var userSubscribersBeginWithM = jsonToUsernamesList(userSubscribersBeginWithMJson).getUsernames();
         expectedSubscribers = List.of(MODERATOR_USERNAME, MAIN_MODERATOR_USERNAME);
-        assert userSubscribersBeginWithM.containsAll(expectedSubscribers) &&
-                expectedSubscribers.containsAll(userSubscribersBeginWithM);
+        assert listEqualsIgnoreOrder(userSubscribersBeginWithM, expectedSubscribers);
     }
 }

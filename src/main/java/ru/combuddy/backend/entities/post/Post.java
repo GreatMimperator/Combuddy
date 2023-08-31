@@ -1,7 +1,6 @@
 package ru.combuddy.backend.entities.post;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,7 +11,7 @@ import ru.combuddy.backend.entities.messaging.Dialog;
 import ru.combuddy.backend.entities.messaging.PublicMessage;
 import ru.combuddy.backend.entities.post.tag.PostTag;
 import ru.combuddy.backend.entities.user.UserAccount;
-import ru.combuddy.backend.exceptions.NotExistsException;
+import ru.combuddy.backend.exceptions.post.IllegalPostStateException;
 
 import java.text.MessageFormat;
 import java.util.Calendar;
@@ -53,19 +52,16 @@ public class Post {
 
         /**
          * Converts using {@link #name()} call and ignoring case in equal check
-         *
-         * @throws NotExistsException if has not role with this name
          */
-        public static State convertToState(String stateAsString) throws NotExistsException {
+        public static State convertToState(String stateAsString) throws IllegalPostStateException {
             for (var state : State.values()) {
                 if (state.name().equalsIgnoreCase(stateAsString)) {
                     return state;
                 }
             }
-            throw new NotExistsException(
+            throw new IllegalPostStateException(
                     MessageFormat.format("Role name {0} does not exist as enum value",
-                            stateAsString),
-                    stateAsString);
+                            stateAsString));
         }
     }
 

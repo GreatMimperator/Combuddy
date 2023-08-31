@@ -9,14 +9,14 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class ImageConverter {
     /**
-     * @return null if can not convert
+     * @return null if it can not be converted
      */
-    public static ImageData convertImage(byte[] inputImageBytes, String convertImageFormat) throws IOException {
-        ByteArrayInputStream inputImageStream = new ByteArrayInputStream(inputImageBytes);
-        BufferedImage inputImage = ImageIO.read(inputImageStream);
+    public static ImageData convertImage(InputStream inputImageBytes, String convertImageFormat) throws IOException {
+        BufferedImage inputImage = ImageIO.read(inputImageBytes);
         if (inputImage == null) {
             return null;
         }
@@ -24,10 +24,10 @@ public class ImageConverter {
     }
 
     /**
-     * @return null if can not convert
+     * @return null if it can not be converted
      */
     public static byte[] resizeImage(byte[] inputImageBytes, int targetWidth, int targetHeight, String imageFormat) throws IOException {
-        ByteArrayInputStream inputImageStream = new ByteArrayInputStream(inputImageBytes);
+        var inputImageStream = new ByteArrayInputStream(inputImageBytes);
         BufferedImage inputImage = ImageIO.read(inputImageStream);
         Image resultingImage = inputImage.getScaledInstance(targetWidth, targetHeight, Image.SCALE_DEFAULT);
         BufferedImage outputImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
@@ -36,7 +36,7 @@ public class ImageConverter {
     }
 
     /**
-     * @return null if can not convert
+     * @return null if it can not be converted
      */
     private static byte[] convert(BufferedImage inputImage, String targetFormat) throws IOException {
         ByteArrayOutputStream convertedImageStream = new ByteArrayOutputStream();

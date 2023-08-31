@@ -1,6 +1,5 @@
 package ru.combuddy.backend.entities.user;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -1,100 +1,131 @@
 package ru.combuddy.backend.controllers.post.service.interfaces;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
-import ru.combuddy.backend.controllers.contact.models.BaseContactInfo;
 import ru.combuddy.backend.controllers.contact.models.ContactList;
 import ru.combuddy.backend.controllers.post.models.PostCreationData;
 import ru.combuddy.backend.controllers.post.models.PostInfo;
-import ru.combuddy.backend.entities.post.FavoritePost;
 import ru.combuddy.backend.entities.post.Post;
-import ru.combuddy.backend.exceptions.NotExistsException;
+import ru.combuddy.backend.entities.user.UserAccount;
+import ru.combuddy.backend.exceptions.contact.NotFoundUserContactException;
+import ru.combuddy.backend.exceptions.general.IllegalPageNumberException;
+import ru.combuddy.backend.exceptions.permission.DeleteNotPermittedException;
+import ru.combuddy.backend.exceptions.permission.ReceiveNotPermittedException;
+import ru.combuddy.backend.exceptions.permission.post.PostContentUpdateNotPermittedException;
+import ru.combuddy.backend.exceptions.permission.post.PostStateUpdateNotPermittedException;
+import ru.combuddy.backend.exceptions.post.IllegalPostStateException;
+import ru.combuddy.backend.exceptions.post.InvalidPostIdException;
+import ru.combuddy.backend.exceptions.permission.post.NotPermittedPostStateException;
+import ru.combuddy.backend.exceptions.tag.InvalidTagNameException;
+import ru.combuddy.backend.exceptions.user.UserNotExistsException;
 
 import java.util.List;
 
 public interface PostService {
+
     /**
      * Sets postedDate if state is {@link Post.State#POSTED}
-     *
-     * @throws ResponseStatusException with {@link HttpStatus#BAD_REQUEST}<br>
-     * 1. If account with this username doesn't exist <br>
-     * 2. If post state is not draft or posted <br>
-     * 3. If any post tag does not exist <br>
-     * 4. If any user contact does not exist
      */
-    Post create(PostCreationData post, String ownerUsername) throws ResponseStatusException;
+    Post create(PostCreationData creationData, String ownerUsername)
+            throws UserNotExistsException,
+            IllegalPostStateException,
+            InvalidTagNameException,
+            NotFoundUserContactException;
 
-    /**
-     * @throws ResponseStatusException with {@link HttpStatus#BAD_REQUEST} if account with this username does not exist <br>
-     * with {@link HttpStatus#FORBIDDEN} if receiver can not receive this data
-     */
-    void delete(Long postId, String removerUsername);
+    void delete(Long postId, String removerUsername)
+            throws UserNotExistsException,
+            InvalidPostIdException,
+            DeleteNotPermittedException;
 
     /**
      * Updates modification date
-     *
-     * @throws ResponseStatusException with {@link HttpStatus#BAD_REQUEST} if post with this id does not exist
-     * or account with this username does not exist,
-     * with {@link HttpStatus#FORBIDDEN} if updater is not permitted to modify state
      */
-    Post updateTitle(Long postId, String updaterUsername, String title) throws ResponseStatusException;
+    Post updateTitle(Long postId,
+                     String updaterUsername,
+                     String title)
+            throws UserNotExistsException,
+            InvalidPostIdException,
+            PostContentUpdateNotPermittedException;
 
     /**
      * Updates modification date
-     *
-     * @throws ResponseStatusException with {@link HttpStatus#BAD_REQUEST} if post with this id does not exist
-     * or account with this username does not exist,
-     * with {@link HttpStatus#FORBIDDEN} if updater is not permitted to modify state
      */
-    Post updateBody(Long postId, String updaterUsername, String body) throws ResponseStatusException;
+    Post updateBody(Long postId,
+                    String updaterUsername,
+                    String body)
+            throws UserNotExistsException,
+            InvalidPostIdException,
+            PostContentUpdateNotPermittedException;
 
     /**
      * Sets postedDate if new state is {@link Post.State#POSTED}
-     *
-     * @throws ResponseStatusException with {@link HttpStatus#BAD_REQUEST} if post with this id does not exist,
-     * or account with this username does not exist
-     * with {@link HttpStatus#FORBIDDEN} if updater is not permitted to modify state
      */
-    Post updateState(Long postId, String updaterUsername, Post.State state) throws ResponseStatusException;
+    Post updateState(Long postId,
+                     String updaterUsername,
+                     Post.State newState)
+            throws UserNotExistsException,
+            InvalidPostIdException,
+            PostStateUpdateNotPermittedException;
 
-    /**
-     * @throws ResponseStatusException with {@link HttpStatus#BAD_REQUEST} if <br>
-     * 1. post with this id does not exist <br>
-     * 2. account with this username does not exist <br>
-     * 3. any tag does not exist <br>
-     * with {@link HttpStatus#FORBIDDEN} if updater is not permitted to modify state
-     */
-    Post updateTags(Long postId, String updaterUsername, List<String> tagNames) throws ResponseStatusException;
+    Post updateTags(Long postId,
+                    String updaterUsername,
+                    List<String> tagNames)
+            throws UserNotExistsException,
+            InvalidPostIdException,
+            PostContentUpdateNotPermittedException,
+            InvalidTagNameException;
 
-    /**
-     * @throws ResponseStatusException with {@link HttpStatus#BAD_REQUEST} if post with this id does not exist <br>
-     * or account with this username does not exist <br>
-     * with {@link HttpStatus#FORBIDDEN} if updater is not permitted to modify state
-     */
-    Post updatePostContacts(Long postId, String updaterUsername, ContactList contactList) throws ResponseStatusException;
+    Post updatePostContacts(Long postId,
+                            String updaterUsername,
+                            ContactList postContacts)
+            throws UserNotExistsException,
+            InvalidPostIdException,
+            PostContentUpdateNotPermittedException;
 
-    /**
-     * @throws ResponseStatusException with {@link HttpStatus#BAD_REQUEST} if <br>
-     * 1. post with this id does not exist <br>
-     * 2. account with this username does not exist <br>
-     * 3. any user contact (or even the type) does not exist, <br>
-     * with {@link HttpStatus#FORBIDDEN} if updater is not permitted to modify state
-     */
-    Post updatePostUserContacts(Long postId, String updaterUsername, ContactList contactList) throws ResponseStatusException;
+    Post updatePostUserContacts(Long postId,
+                                String updaterUsername,
+                                ContactList userContacts)
+            throws UserNotExistsException,
+            InvalidPostIdException,
+            PostContentUpdateNotPermittedException,
+            NotFoundUserContactException;
 
-    /**
-     * @throws ResponseStatusException with {@link HttpStatus#BAD_REQUEST} if post with this id does not exist
-     * or account with this username does not exist <br>
-     * with {@link HttpStatus#FORBIDDEN} if receiver can not receive this data
-     */
-    PostInfo getPostInfo(Long postId, String receiverUsername) throws ResponseStatusException;
+    PostInfo getPostInfo(Long postId, String receiverUsername)
+            throws UserNotExistsException,
+            InvalidPostIdException,
+            ReceiveNotPermittedException;
 
-    void addPostToFavourites(Long postId, String receiverUsername);
+    PostInfo toPostInfo(Post post, UserAccount receiver);
 
-    boolean removePostFromFavourites(Long postId, String receiverUsername);
+    Post getById(Long postId) throws InvalidPostIdException;
 
-    // todo: receive post data
-    // todo: paging with specified tags
+    List<Long> searchMain(int pageNumberSinceOne,
+                          List<String> requestedStateName,
+                          String receiverUsername)
+            throws IllegalPageNumberException,
+            UserNotExistsException,
+            IllegalPostStateException,
+            NotPermittedPostStateException;
 
-    // todo: favouritePosts, subs, and home posts receive
+    List<Long> searchHome(int pageNumberSinceOne,
+                          List<String> requestedStateNames,
+                          String receiverUsername)
+            throws IllegalPageNumberException,
+                UserNotExistsException,
+                IllegalPostStateException,
+                NotPermittedPostStateException;
+
+    List<Long> getSubscriptionsFeed(int pageNumberSinceOne,
+                                    List<String> requestedStateNames,
+                                    String receiverUsername)
+            throws IllegalPageNumberException,
+            UserNotExistsException,
+            IllegalPostStateException,
+            NotPermittedPostStateException;
+
+    List<Long> searchFavourites(int pageNumberSinceOne,
+                                List<String> requestedStateNames,
+                                String receiverUsername)
+            throws IllegalPageNumberException,
+                UserNotExistsException,
+                IllegalPostStateException,
+                NotPermittedPostStateException;
 }

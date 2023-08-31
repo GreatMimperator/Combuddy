@@ -1,19 +1,19 @@
 package ru.combuddy.backend.controllers.user.service.interfaces;
 
-import org.springframework.util.StringUtils;
 import ru.combuddy.backend.entities.user.UserAccount;
+import ru.combuddy.backend.exceptions.general.IllegalPageNumberException;
+import ru.combuddy.backend.exceptions.permission.FreezeStateSetNotPermittedException;
+import ru.combuddy.backend.exceptions.permission.user.RoleSetNotPermittedException;
+import ru.combuddy.backend.exceptions.user.InvalidRoleNameException;
+import ru.combuddy.backend.exceptions.user.UserAlreadyExistsException;
+import ru.combuddy.backend.exceptions.user.UserNotExistsException;
 import ru.combuddy.backend.security.entities.Role;
-import ru.combuddy.backend.exceptions.AlreadyExistsException;
-import ru.combuddy.backend.exceptions.NotExistsException;
 
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 
 public interface UserAccountService {
-    UserAccount createDefaultUser(String username) throws AlreadyExistsException;
-
-    Optional<Role> findRoleByUsername(String username);
+    UserAccount createDefaultUser(String username) throws UserAlreadyExistsException;
 
     boolean exists(String username);
 
@@ -21,43 +21,34 @@ public interface UserAccountService {
 
     Optional<UserAccount> findByUsername(String username);
 
-    /**
-     * Calls {@link #findByUsername(String)} and calls {@link #throwUserNotExists(String, String)} on empty.
-     * Else returns got user
-     *
-     * @param alias will be used capitalized in exception
-     * @throws NotExistsException thrown via {@link #throwUserNotExists(String, String)}
-     */
-    default UserAccount getByUsername(String username, String alias) throws NotExistsException {
-        var foundUser = findByUsername(username);
-        if (foundUser.isEmpty()) {
-            throwUserNotExists(username, alias);
-        }
-        return foundUser.get();
-    }
+    UserAccount getByUsername(String username) throws UserNotExistsException;
 
-    /**
-     * @param alias will be used capitalized in exception
-     * @throws NotExistsException this function purpose is to throw this exception
-     */
-    default void throwUserNotExists(String username, String alias) throws NotExistsException {
-        throw new NotExistsException(
-                MessageFormat.format("{0} with username {1} does not exist",
-                        StringUtils.capitalize(alias),
-                        username),
-                username);
-    }
-
-    /**
-     * @throws NotExistsException if account not found
-     */
-    void updateFrozenState(boolean frozen, String username) throws NotExistsException;
+    Optional<Role> findRoleByUsername(String username);
 
     boolean delete(String username);
 
-    List<String> findUsernamesStartedWith(String usernameBeginPart);
+    List<String> findUsernamesStartedWith(String usernameBeginPart, int pageNumberSinceOne) throws IllegalPageNumberException;
 
-    boolean isFrozen(String username) throws NotExistsException;
+    boolean isFrozen(String username) throws UserNotExistsException;
 
     void replaceRole(UserAccount receiver, Role.RoleName roleName);
+
+    void freeze(String suspectUsername, String suspenderUsername)
+            throws UserNotExistsException,
+            FreezeStateSetNotPermittedException;
+
+    void unfreeze(String suspectUsername, String suspenderUsername)
+            throws UserNotExistsException,
+            FreezeStateSetNotPermittedException;
+
+    void delete(String suspenderUsername, String suspectUsername)
+            throws UserNotExistsException,
+            FreezeStateSetNotPermittedException;
+
+    void setRole(String roleStringName,
+                 String receiverUsername,
+                 String issuerUsername)
+            throws UserNotExistsException,
+            InvalidRoleNameException,
+            RoleSetNotPermittedException;
 }

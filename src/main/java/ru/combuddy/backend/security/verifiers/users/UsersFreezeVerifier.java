@@ -3,7 +3,7 @@ package ru.combuddy.backend.security.verifiers.users;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import ru.combuddy.backend.entities.user.UserAccount;
-import ru.combuddy.backend.security.entities.Role;
+import ru.combuddy.backend.security.AuthorityComparator;
 import ru.combuddy.backend.security.verifiers.PermissionVerifier;
 
 import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_MODERATOR;
@@ -12,7 +12,7 @@ import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_MODERATOR
 @AllArgsConstructor
 public class UsersFreezeVerifier implements PermissionVerifier<UserAccount> {
 
-    public final Role.RoleName.AuthorityComparator authorityComparator;
+    public final AuthorityComparator authorityComparator;
 
     @Override
     public boolean verify(UserAccount asker, UserAccount target) {

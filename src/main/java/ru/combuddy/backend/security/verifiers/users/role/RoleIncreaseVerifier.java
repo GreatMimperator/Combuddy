@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
 import ru.combuddy.backend.entities.user.UserAccount;
+import ru.combuddy.backend.security.AuthorityComparator;
 import ru.combuddy.backend.security.entities.Role;
 import ru.combuddy.backend.security.verifiers.PermissionVerifier;
 
@@ -14,7 +15,7 @@ import static ru.combuddy.backend.security.entities.Role.RoleName.*;
 @AllArgsConstructor
 public class RoleIncreaseVerifier implements PermissionVerifier<RoleIncreaseVerifier.VerifyInfo> {
 
-    public final Role.RoleName.AuthorityComparator authorityComparator;
+    public final AuthorityComparator authorityComparator;
 
     @Override
     public boolean verify(UserAccount asker, VerifyInfo target) {

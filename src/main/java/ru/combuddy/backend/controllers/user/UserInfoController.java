@@ -1,84 +1,53 @@
 package ru.combuddy.backend.controllers.user;
 
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 import ru.combuddy.backend.controllers.user.models.UserProfileInfo;
-import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
-import ru.combuddy.backend.exceptions.NotExistsException;
 
 import java.io.IOException;
 
-import static ru.combuddy.backend.controllers.user.UserAccountController.checkFoundAccount;
+import static ru.combuddy.backend.controllers.user.AuthController.getUsername;
 
 @RestController
-@RequestMapping("/api/user/info")
+@RequestMapping("/api/v1/user/info")
 @AllArgsConstructor
 public class UserInfoController {
 
-    private final UserAccountService userAccountService;
     private final UserInfoService userInfoService;
 
     @PostMapping(value = "/set-profile-picture",
             consumes = {MediaType.MULTIPART_FORM_DATA_VALUE,
                     MediaType.MULTIPART_MIXED_VALUE})
-    @Transactional
     @ResponseStatus(HttpStatus.CREATED)
-    public void setProfilePicture(@RequestPart("picture") MultipartFile imageMultipartFile, Authentication authentication) throws IOException {
-        var username = authentication.getName();
-        var userAccount = checkFoundAccount(userAccountService.findByUsername(username));
-        var userInfo = userAccount.getUserInfo();
-        userInfoService.addFullAndThumbnailPictures(userInfo, imageMultipartFile);
-        userInfoService.save(userInfo);
+    public void setProfilePicture(@RequestPart("picture") MultipartFile pictureMultipartFile,
+                                  Authentication authentication)
+            throws IOException {
+        var username = getUsername(authentication);
+        var pictureInputStream = pictureMultipartFile.getInputStream();
+        userInfoService.setProfilePicture(pictureInputStream, username);
     }
 
-    @GetMapping("/all/{username}")
-    public UserProfileInfo getProfilePublicInfo(@PathVariable String username, Authentication authentication) {
-        try {
-            return userInfoService.getAllInfo(username, authentication.getName());
-        } catch (NotExistsException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Users with this username do not exist");
-        }
+    @GetMapping("/all/{profileOwnerUsername}")
+    public UserProfileInfo getProfilePublicInfo(@PathVariable String profileOwnerUsername, Authentication authentication) {
+        var receiverUsername = getUsername(authentication);
+        return userInfoService.getAllInfo(profileOwnerUsername, receiverUsername);
     }
 
-    @Transactional
     @GetMapping(value = "/thumbnail/{username}",
             produces = MediaType.IMAGE_PNG_VALUE)
-    public byte[] getThumbnail(@PathVariable String username) {
-        var foundThumbnailBytes = userInfoService.getThumbnailBytes(username);
-        if (foundThumbnailBytes.isEmpty()) {
-            if (userAccountService.exists(username)) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "User hasn't picture yet");
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Users with this username do not exist");
-            }
-        }
-        return foundThumbnailBytes.get();
+    public InputStreamResource getThumbnail(@PathVariable String username) {
+        return new InputStreamResource(userInfoService.getProfilePictureThumbnail(username));
     }
 
-    @Transactional
     @GetMapping(value = "/full-picture/{username}",
             produces = MediaType.IMAGE_PNG_VALUE)
-    public byte[] getFullPicture(@PathVariable String username) {
-        var foundThumbnailBytes = userInfoService.getFullPictureBytes(username);
-        if (foundThumbnailBytes.isEmpty()) {
-            if (userAccountService.exists(username)) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "User hasn't picture yet");
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Users with this username do not exist");
-            }
-        }
-        return foundThumbnailBytes.get();
+    public InputStreamResource getFullPicture(@PathVariable String username) {
+        return new InputStreamResource(userInfoService.getFullProfilePicture(username));
     }
 }

@@ -5,7 +5,7 @@ import lombok.Getter;
 import org.springframework.stereotype.Component;
 import ru.combuddy.backend.entities.user.PrivacyPolicy;
 import ru.combuddy.backend.entities.user.UserAccount;
-import ru.combuddy.backend.security.entities.Role;
+import ru.combuddy.backend.security.AuthorityComparator;
 import ru.combuddy.backend.security.verifiers.PermissionVerifier;
 
 import static ru.combuddy.backend.entities.user.PrivacyPolicy.SubscriptionsAccessLevel.EVERYBODY;
@@ -16,7 +16,7 @@ import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_USER;
 @AllArgsConstructor
 public class SubscriptionsAccessVerifier implements PermissionVerifier<SubscriptionsAccessVerifier.VerifyInfo> {
 
-    public final Role.RoleName.AuthorityComparator authorityComparator;
+    public final AuthorityComparator authorityComparator;
 
     @Override
     public boolean verify(UserAccount asker, VerifyInfo target) {

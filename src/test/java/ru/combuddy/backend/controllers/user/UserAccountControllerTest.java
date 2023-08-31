@@ -2,6 +2,7 @@ package ru.combuddy.backend.controllers.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.graalvm.collections.Pair;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -13,16 +14,16 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import ru.combuddy.backend.controllers.ServiceConstants;
 import ru.combuddy.backend.controllers.user.models.UsernamesList;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.queries.user.AuthControllerQueries;
 import ru.combuddy.backend.queries.user.UserAccountControllerQueries;
 
-import java.util.List;
+import java.util.LinkedList;
 
-import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.combuddy.backend.Util.listEqualsIgnoreOrder;
 import static ru.combuddy.backend.controllers.user.AuthControllerTest.*;
 import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_MODERATOR;
 
@@ -44,6 +45,10 @@ public class UserAccountControllerTest {
     @Autowired
     private UserAccountControllerQueries userAccountControllerQueries;
 
+    @Autowired
+    private ServiceConstants serviceConstants;
+
+
     @Test
     public void freezeUnfreezeUserByModeratorTest() throws Exception {
         var userUsername = RANDOM_USER_USERNAME;
@@ -61,8 +66,8 @@ public class UserAccountControllerTest {
     @Test
     public void deleteUserByMainModeratorTest() throws Exception {
         var userUsername = RANDOM_USER_USERNAME;
-        var mainModeratorLoginResponse = loginPreconfigured(mockMvc, MAIN_MODERATOR_USERNAME);
-        userAccountControllerQueries.delete(userUsername, mainModeratorLoginResponse.getAccessToken())
+        var mainModeratorAccessToken = loginPreconfigured(mockMvc, MAIN_MODERATOR_USERNAME);
+        userAccountControllerQueries.delete(userUsername, mainModeratorAccessToken)
                 .andExpect(status().isNoContent());
         authControllerQueries.register(userUsername, "anything")
                 .andExpect(status().isCreated());
@@ -70,26 +75,41 @@ public class UserAccountControllerTest {
 
     @Test
     public void usernamesBeginWithTest() throws Exception {
-        var userLoginResponse = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
-        var usernamesListJson = userAccountControllerQueries.usernamesBeginWith("m", userLoginResponse.getAccessToken())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.usernames").isArray())
-                .andReturn().getResponse().getContentAsString();
-        var usernamesList = jsonToUsernamesList(usernamesListJson);
-        var mockUsernamesList = List.of(MODERATOR_USERNAME, MAIN_MODERATOR_USERNAME);
-        // equals check
-        assert usernamesList.getUsernames().containsAll(mockUsernamesList) &&
-                mockUsernamesList.containsAll(usernamesList.getUsernames());
+        var accessToken = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
+        var answerPageSize = serviceConstants.getUsersBeginWithPerPage();
+        var n = 3;
+        var kaStartedUsernamesNPagesSizeList = new LinkedList<String>();
+        for (int pageIndex = 0; pageIndex < n; pageIndex++) {
+            for (int i = 0; i < answerPageSize; i++) {
+                String usernameSecondPart;
+                do {
+                    usernameSecondPart = RandomStringUtils.randomAlphabetic(5, 10);
+                } while(kaStartedUsernamesNPagesSizeList.contains(usernameSecondPart));
+                var username = "ka" + usernameSecondPart;
+                kaStartedUsernamesNPagesSizeList.add(username);
+                userAccountService.createDefaultUser(username);
+            }
+        }
+        var gotUsernamesList = new LinkedList<String>();
+        for (int pageIndex = 0; pageIndex < n; pageIndex++) {
+            var usernamesListJson = userAccountControllerQueries.usernamesBeginWith("ka",
+                            pageIndex + 1,
+                            accessToken)
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            gotUsernamesList.addAll(jsonToUsernamesList(usernamesListJson).getUsernames());
+        }
+        assert listEqualsIgnoreOrder(gotUsernamesList, kaStartedUsernamesNPagesSizeList);
     }
 
     @Test
     @Transactional
     public void setModeratorToUserByMainModerator() throws Exception {
         var userUsername = RANDOM_USER_USERNAME;
-        var mainModeratorLoginResponse = loginPreconfigured(mockMvc, MAIN_MODERATOR_USERNAME);
+        var mainModeratorAccessToken = loginPreconfigured(mockMvc, MAIN_MODERATOR_USERNAME);
         userAccountControllerQueries.roleSet(ROLE_MODERATOR.name(),
                         userUsername,
-                        mainModeratorLoginResponse.getAccessToken())
+                        mainModeratorAccessToken)
                 .andExpect(status().isNoContent());
         assert userAccountService.findByUsername(userUsername).get().getRole().getName() == ROLE_MODERATOR;
     }
@@ -123,15 +143,15 @@ public class UserAccountControllerTest {
     public static ResultActions receiveFreezeResultActions(MockMvc mockMvc, Pair<String, String> freezerCredentials, String toBeFrozenUsername) throws Exception {
         var freezerUsername = freezerCredentials.getLeft();
         var freezerPassword = freezerCredentials.getRight();
-        var freezerLoginResponse = login(mockMvc, freezerUsername, freezerPassword);
-        return new UserAccountControllerQueries(mockMvc).freeze(toBeFrozenUsername, freezerLoginResponse.getAccessToken());
+        var freezerAccessToken = login(mockMvc, freezerUsername, freezerPassword);
+        return new UserAccountControllerQueries(mockMvc).freeze(toBeFrozenUsername, freezerAccessToken);
     }
 
     public static ResultActions receiveUnfreezeResultActions(MockMvc mockMvc, Pair<String, String> unfreezerCredentials, String toBeUnfrozenUsername) throws Exception {
         var unfreezerUsername = unfreezerCredentials.getLeft();
         var unfreezerPassword = unfreezerCredentials.getRight();
-        var unfreezerLoginResponse = login(mockMvc, unfreezerUsername, unfreezerPassword);
-        return new UserAccountControllerQueries(mockMvc).unfreeze(toBeUnfrozenUsername, unfreezerLoginResponse.getAccessToken());
+        var unfreezerAccessToken = login(mockMvc, unfreezerUsername, unfreezerPassword);
+        return new UserAccountControllerQueries(mockMvc).unfreeze(toBeUnfrozenUsername, unfreezerAccessToken);
     }
 
 }

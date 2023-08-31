@@ -1,82 +1,56 @@
 package ru.combuddy.backend.controllers.contact;
 
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import ru.combuddy.backend.controllers.contact.models.BaseContactInfo;
 import ru.combuddy.backend.controllers.contact.models.ContactList;
 import ru.combuddy.backend.controllers.contact.service.interfaces.UserContactService;
-import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
-import ru.combuddy.backend.entities.contact.BaseContact.ContactType;
-import ru.combuddy.backend.entities.contact.user.UserContact;
-import ru.combuddy.backend.exceptions.NotExistsException;
 
 import java.text.MessageFormat;
 import java.util.regex.Pattern;
 
-import static java.util.regex.Pattern.matches;
+import static ru.combuddy.backend.controllers.user.AuthController.getUsername;
 import static ru.combuddy.backend.entities.contact.BaseContact.ContactType.convertToContactType;
 
 @RestController
-@RequestMapping("/api/contact")
+@RequestMapping("/api/v1/contact")
 @AllArgsConstructor
 public class UserContactController {
 
     private final UserContactService userContactService;
 
-    @PutMapping("/add")
+    @PutMapping(value = "/put")
     @ResponseStatus(HttpStatus.CREATED)
-    @Transactional
     public void add(@RequestParam("contactType") String contactTypeAsString,
                     @RequestParam String contact,
                     Authentication authentication) {
-        ContactType contactType;
-        try {
-            contactType = convertToContactType(contactTypeAsString);
-        } catch (NotExistsException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    MessageFormat.format("Contact type {0} does not exist",
-                            contactTypeAsString));
-        }
+        var creatorUsername = getUsername(authentication);
+        var contactType = convertToContactType(contactTypeAsString);
         if (!Pattern.matches(contactType.getValidationRegex(), contact)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     MessageFormat.format("Contact {0} does not satisfy the contact type regex {1}",
                             contact,
-                            contactTypeAsString));
+                            contactType.getValidationRegex()));
         }
-        var username = authentication.getName();
-        if (userContactService.exists(username, contact)) {
-            return;
-        }
-        userContactService.addChecked(username, contactType, contact);
+        userContactService.putChecked(creatorUsername, contactType, contact);
     }
 
-    @DeleteMapping("/remove") // todo: all remove to delete
+    @DeleteMapping("/delete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void remove(@RequestParam("contactType") String contactTypeAsString,
+    public void delete(@RequestParam("contactType") String contactTypeAsString,
                        @RequestParam String contact,
                        Authentication authentication) {
-        ContactType contactType;
-        try {
-            contactType = convertToContactType(contactTypeAsString);
-        } catch (NotExistsException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    MessageFormat.format("Contact type {0} does not exist",
-                            contactTypeAsString));
-        }
-        var username = authentication.getName();
+        var username = getUsername(authentication);
+        var contactType = convertToContactType(contactTypeAsString);
         userContactService.delete(username, contactType, contact);
     }
 
     @GetMapping("/list")
     public ContactList list(Authentication authentication) {
-        var username = authentication.getName();
-        var baseContacts = userContactService.getAll(username).stream()
-                .map(BaseContactInfo::new)
-                .toList();
-        return new ContactList(baseContacts);
+        var receiverUsername = getUsername(authentication);
+        var userContacts = userContactService.getAll(receiverUsername);
+        return new ContactList(userContactService.toBaseContacts(userContacts));
     }
 }

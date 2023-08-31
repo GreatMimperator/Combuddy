@@ -1,7 +1,6 @@
 package ru.combuddy.backend.entities.post.tag;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,7 +23,6 @@ public class Tag {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
     @Size(min = MIN_NAME_LENGTH, max = MAX_NAME_LENGTH)
     @Column(length = MAX_NAME_LENGTH, unique = true, nullable = false)
     private String name;

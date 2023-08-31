@@ -21,7 +21,6 @@ import ru.combuddy.backend.util.ImageConverter;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.combuddy.backend.controllers.user.AuthControllerTest.*;
@@ -50,9 +49,9 @@ public class UserInfoControllerTest {
     @Test
     @Transactional
     public void allForRandomUserByModeratorTest() throws Exception {
-        var moderatorLoginResponse = loginPreconfigured(mockMvc, MODERATOR_USERNAME);
+        var moderatorAccessToken = loginPreconfigured(mockMvc, MODERATOR_USERNAME);
         var userUsername = RANDOM_USER_USERNAME;
-        var userProfileInfoJson = userInfoControllerQueries.all(userUsername, moderatorLoginResponse.getAccessToken())
+        var userProfileInfoJson = userInfoControllerQueries.all(userUsername, moderatorAccessToken)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse().getContentAsString();
@@ -63,39 +62,36 @@ public class UserInfoControllerTest {
         assertEquals(gotProfileInfo.getRole(), randomUser.getRole().getName().name());
         assertEquals(gotProfileInfo.getRegisteredDate().get().getTimeInMillis(),
                 randomUser.getUserInfo().getRegisteredDate().getTimeInMillis());
-        var permittedToSee = new UserProfileInfo.PermittedToSee(true, false);
-        assert gotProfileInfo.getSubscriptions().isEmpty() &&
-                !permittedToSee.isSubscriptions();
-        assertEquals(gotProfileInfo.getPermittedToSee(), permittedToSee);
+        assert gotProfileInfo.getSubscriptions().isEmpty();
     }
 
     @Test
     @Transactional
     public void setProfilePictureTest() throws Exception {
-        var userLoginResponse = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
+        var accessToken = loginPreconfigured(mockMvc, RANDOM_USER_USERNAME);
         userInfoControllerQueries.setProfilePicture(
                         PENGUIN_RESOURCES_PICTURE_PATH,
-                        userLoginResponse.getAccessToken())
+                        accessToken)
                 .andExpect(status().isCreated());
     }
 
     @Test
     @Transactional
     public void receiveFullPictureAndThumbnailTest() throws Exception {
-        var userUsername = RANDOM_USER_USERNAME;
-        var userLoginResponse = loginPreconfigured(mockMvc, userUsername);
+        var username = RANDOM_USER_USERNAME;
+        var accessToken = loginPreconfigured(mockMvc, username);
         userInfoControllerQueries.setProfilePicture(
                         PENGUIN_RESOURCES_PICTURE_PATH,
-                        userLoginResponse.getAccessToken());
-        var fullPictureMvcResult = userInfoControllerQueries.fullPicture(userUsername, userLoginResponse.getAccessToken())
+                        accessToken);
+        var fullPictureMvcResult = userInfoControllerQueries.fullPicture(username, accessToken)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.IMAGE_PNG))
                 .andReturn();
-        var expectedImageContent = userInfoService.getFullPictureBytes(userUsername).get();
+        var expectedImageContent = userInfoService.getFullProfilePicture(username).readAllBytes();
         var fullPictureResultContent = fullPictureMvcResult.getResponse()
                 .getContentAsByteArray();
         assertArrayEquals(expectedImageContent, fullPictureResultContent);
-        var thumbnailMvcResult = userInfoControllerQueries.thumbnail(userUsername, userLoginResponse.getAccessToken())
+        var thumbnailMvcResult = userInfoControllerQueries.thumbnail(username, accessToken)
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.IMAGE_PNG))
                 .andReturn();
