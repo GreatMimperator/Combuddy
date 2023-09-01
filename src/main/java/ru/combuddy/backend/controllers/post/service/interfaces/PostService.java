@@ -11,6 +11,7 @@ import ru.combuddy.backend.exceptions.permission.DeleteNotPermittedException;
 import ru.combuddy.backend.exceptions.permission.ReceiveNotPermittedException;
 import ru.combuddy.backend.exceptions.permission.post.PostContentUpdateNotPermittedException;
 import ru.combuddy.backend.exceptions.permission.post.PostStateUpdateNotPermittedException;
+import ru.combuddy.backend.exceptions.post.IllegalCreationDataException;
 import ru.combuddy.backend.exceptions.post.IllegalPostStateException;
 import ru.combuddy.backend.exceptions.post.InvalidPostIdException;
 import ru.combuddy.backend.exceptions.permission.post.NotPermittedPostStateException;
@@ -26,6 +27,7 @@ public interface PostService {
      */
     Post create(PostCreationData creationData, String ownerUsername)
             throws UserNotExistsException,
+            IllegalCreationDataException,
             IllegalPostStateException,
             InvalidTagNameException,
             NotFoundUserContactException;

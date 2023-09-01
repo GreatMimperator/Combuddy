@@ -28,6 +28,7 @@ import ru.combuddy.backend.exceptions.permission.ReceiveNotPermittedException;
 import ru.combuddy.backend.exceptions.permission.post.NotPermittedPostStateException;
 import ru.combuddy.backend.exceptions.permission.post.PostContentUpdateNotPermittedException;
 import ru.combuddy.backend.exceptions.permission.post.PostStateUpdateNotPermittedException;
+import ru.combuddy.backend.exceptions.post.IllegalCreationDataException;
 import ru.combuddy.backend.exceptions.post.IllegalPostStateException;
 import ru.combuddy.backend.exceptions.post.InvalidPostIdException;
 import ru.combuddy.backend.exceptions.tag.InvalidTagNameException;
@@ -63,7 +64,6 @@ public class PostServiceImpl implements PostService {
     private final TagService tagService;
     private final PostContactService postContactService;
     private final PostUserContactService postUserContactService;
-    private final BlackListService blackListService;
 
     private final PostDeleteVerifier postDeleteVerifier;
     private final PostStateChangeVerifier postStateChangeVerifier;
@@ -93,13 +93,13 @@ public class PostServiceImpl implements PostService {
             post.setPostedDate(Calendar.getInstance());
         }
         post.setTags(tagService.getPostTagsFromTagNames(creationData.getTags(), post));
-        if (creationData.getPostContacts().isPresent()) {
-            var postBaseContacts = creationData.getPostContacts().get();
+        if (creationData.getPostContacts() != null) {
+            var postBaseContacts = creationData.getPostContacts();
             post.setPostContacts(
                     postContactService.getFromContacts(postBaseContacts, post));
         }
-        if (creationData.getUserContacts().isPresent()) {
-            var postUserBaseContacts = creationData.getUserContacts().get();
+        if (creationData.getUserContacts() != null) {
+            var postUserBaseContacts = creationData.getUserContacts();
             post.setPostUserContacts(
                     postUserContactService.getFromContacts(
                             postUserBaseContacts,

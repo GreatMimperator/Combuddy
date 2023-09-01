@@ -8,6 +8,7 @@ import ru.combuddy.backend.controllers.ServiceConstants;
 import ru.combuddy.backend.controllers.user.projections.account.RoleOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.projections.account.UsernameOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
+import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
 import ru.combuddy.backend.entities.user.PrivacyPolicy;
 import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.entities.user.UserInfo;
@@ -61,6 +62,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         var userInfo = new UserInfo(userAccount);
         userAccount.setUserInfo(userInfo);
         var privacyPolicy = new PrivacyPolicy(userAccount);
+        UserInfoService.setPrivacyPolicyToDefault(privacyPolicy);
         userAccount.setPrivacyPolicy(privacyPolicy);
         return userAccountRepository.save(userAccount);
     }

@@ -23,7 +23,7 @@ public class UserContactController {
 
     @PutMapping(value = "/put")
     @ResponseStatus(HttpStatus.CREATED)
-    public void add(@RequestParam("contactType") String contactTypeAsString,
+    public void put(@RequestParam("contactType") String contactTypeAsString,
                     @RequestParam String contact,
                     Authentication authentication) {
         var creatorUsername = getUsername(authentication);

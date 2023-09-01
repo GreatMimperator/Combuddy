@@ -1,6 +1,8 @@
 package ru.combuddy.backend.controllers.post.models;
 
 import com.fasterxml.jackson.annotation.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,30 +15,17 @@ import java.util.Optional;
 @Data
 @Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @JsonPropertyOrder({"title", "body", "state", "tags", "postContacts", "userContacts"})
 public class PostCreationData {
-
+    @NotNull
     private String title;
+    @NotNull
     private String body;
+    @NotNull
     private Post.State state;
+    @NotNull
     private List<String> tags;
-    @JsonInclude(JsonInclude.Include.NON_ABSENT)
-    private Optional<List<BaseContactInfo>> postContacts;
-    @JsonInclude(JsonInclude.Include.NON_ABSENT)
-    private Optional<List<BaseContactInfo>> userContacts;
-
-    @JsonCreator
-    public PostCreationData(@JsonProperty("title") String title,
-                            @JsonProperty("body") String body,
-                            @JsonProperty("state") Post.State state,
-                            @JsonProperty("tags") List<String> tags,
-                            @JsonProperty("postContacts") Optional<List<BaseContactInfo>> postContacts,
-                            @JsonProperty("userContacts") Optional<List<BaseContactInfo>> userContacts) {
-        this.title = title;
-        this.body = body;
-        this.state = state;
-        this.tags = tags;
-        this.postContacts = postContacts;
-        this.userContacts = userContacts;
-    }
+    private List<BaseContactInfo> postContacts;
+    private List<BaseContactInfo> userContacts;
 }

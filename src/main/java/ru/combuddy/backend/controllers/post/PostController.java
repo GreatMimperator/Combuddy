@@ -1,5 +1,6 @@
 package ru.combuddy.backend.controllers.post;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,7 +28,7 @@ public class PostController {
     @PostMapping(value = "/create",
             consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public Long create(@RequestBody PostCreationData postCreationData, Authentication authentication) {
+    public Long create(@Valid @RequestBody PostCreationData postCreationData, Authentication authentication) {
         var creatorUsername = getUsername(authentication);
         var post = postService.create(postCreationData, creatorUsername);
         return post.getId();
@@ -35,7 +36,7 @@ public class PostController {
 
     @DeleteMapping("/delete/{postId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void remove(@PathVariable Long postId, Authentication authentication) {
+    public void delete(@PathVariable Long postId, Authentication authentication) {
         var deleterUsername = getUsername(authentication);
         postService.delete(postId, deleterUsername);
     }
@@ -81,7 +82,7 @@ public class PostController {
     @PatchMapping("/update/{postId}/post-contacts")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updatePostContacts(@PathVariable Long postId,
-                                   @RequestBody ContactList contactList,
+                                   @Valid @RequestBody ContactList contactList,
                                    Authentication authentication) {
         var updaterUsername = getUsername(authentication);
         postService.updatePostContacts(postId, updaterUsername, contactList);
@@ -90,7 +91,7 @@ public class PostController {
     @PatchMapping("/update/{postId}/user-contacts")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updatePostUserContacts(@PathVariable Long postId,
-                                       @RequestBody ContactList contactList,
+                                       @Valid @RequestBody ContactList contactList,
                                        Authentication authentication) {
         var updaterUsername = getUsername(authentication);
         postService.updatePostUserContacts(postId, updaterUsername, contactList);

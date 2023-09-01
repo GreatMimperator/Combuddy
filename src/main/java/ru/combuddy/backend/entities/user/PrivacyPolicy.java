@@ -21,10 +21,10 @@ public class PrivacyPolicy {
     private UserAccount userAccount;
 
     @Enumerated(EnumType.STRING)
-    private SubscriptionsAccessLevel subscriptionsAccessLevel = SubscriptionsAccessLevel.EVERYBODY;
+    private SubscriptionsAccessLevel subscriptionsAccessLevel;
 
     @Enumerated(EnumType.STRING)
-    private RegisteredDateAccessLevel registeredDateAccessLevel = RegisteredDateAccessLevel.EVERYBODY;
+    private RegisteredDateAccessLevel registeredDateAccessLevel;
 
     public PrivacyPolicy(UserAccount userAccount) {
         this.userAccount = userAccount;

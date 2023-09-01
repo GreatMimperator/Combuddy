@@ -1,5 +1,6 @@
 package ru.combuddy.backend.controllers.user;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpStatus;
@@ -7,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ru.combuddy.backend.controllers.user.models.PrivacyPolicyInfo;
 import ru.combuddy.backend.controllers.user.models.UserProfileInfo;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
 
@@ -49,5 +51,26 @@ public class UserInfoController {
             produces = MediaType.IMAGE_PNG_VALUE)
     public InputStreamResource getFullPicture(@PathVariable String username) {
         return new InputStreamResource(userInfoService.getFullProfilePicture(username));
+    }
+
+    @PutMapping("/privacy-policy/set")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setPrivacyPolicy(@Valid @RequestBody PrivacyPolicyInfo privacyPolicyInfo,
+                                 Authentication authentication) {
+        var username = getUsername(authentication);
+        userInfoService.setPrivacyPolicy(privacyPolicyInfo, username);
+    }
+
+    @PutMapping("/privacy-policy/set-default")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setPrivacyPolicy(Authentication authentication) {
+        var username = getUsername(authentication);
+        userInfoService.setDefaultPrivacyPolicy(username);
+    }
+
+    @GetMapping("/privacy-policy/get")
+    public PrivacyPolicyInfo getPrivacyPolicy(Authentication authentication) {
+        var username = getUsername(authentication);
+        return userInfoService.getPrivacyPolicyInfo(username);
     }
 }

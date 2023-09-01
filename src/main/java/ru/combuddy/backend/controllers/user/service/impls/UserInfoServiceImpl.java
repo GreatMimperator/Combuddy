@@ -5,10 +5,12 @@ import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.combuddy.backend.controllers.contact.service.interfaces.UserContactService;
+import ru.combuddy.backend.controllers.user.models.PrivacyPolicyInfo;
 import ru.combuddy.backend.controllers.user.models.UserProfileInfo;
 import ru.combuddy.backend.controllers.user.service.interfaces.SubscriptionService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
+import ru.combuddy.backend.entities.user.PrivacyPolicy;
 import ru.combuddy.backend.entities.user.UserInfo;
 import ru.combuddy.backend.exceptions.files.FIleWeightException;
 import ru.combuddy.backend.exceptions.files.UnsupportedPictureException;
@@ -131,5 +133,29 @@ public class UserInfoServiceImpl implements UserInfoService {
         var userInfo = userAccount.getUserInfo();
         this.addFullAndThumbnailPictures(userInfo, pictureInputStream);
         this.save(userInfo);
+    }
+
+    @Override
+    public void setPrivacyPolicy(PrivacyPolicyInfo privacyPolicyInfo, String username) throws UserNotExistsException {
+        var user = userAccountService.getByUsername(username);
+        var privacyPolicy = privacyPolicyRepository.findByUserAccountId(user.getId()).get();
+        privacyPolicy.setSubscriptionsAccessLevel(privacyPolicyInfo.getSubscriptionsAccessLevel());
+        privacyPolicy.setRegisteredDateAccessLevel(privacyPolicyInfo.getRegisteredDateAccessLevel());
+        privacyPolicyRepository.save(privacyPolicy);
+    }
+
+    @Override
+    public void setDefaultPrivacyPolicy(String username) throws UserNotExistsException {
+        var user = userAccountService.getByUsername(username);
+        var privacyPolicy = privacyPolicyRepository.findByUserAccountId(user.getId()).get();
+        UserInfoService.setPrivacyPolicyToDefault(privacyPolicy);
+        privacyPolicyRepository.save(privacyPolicy);
+    }
+
+    @Override
+    public PrivacyPolicyInfo getPrivacyPolicyInfo(String username) throws UserNotExistsException {
+        var userAccount = userAccountService.getByUsername(username);
+        var privacyPolicy = privacyPolicyRepository.findByUserAccountId(userAccount.getId()).get();
+        return new PrivacyPolicyInfo(privacyPolicy);
     }
 }

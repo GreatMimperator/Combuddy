@@ -1,6 +1,8 @@
 package ru.combuddy.backend.controllers.user.service.interfaces;
 
+import ru.combuddy.backend.controllers.user.models.PrivacyPolicyInfo;
 import ru.combuddy.backend.controllers.user.models.UserProfileInfo;
+import ru.combuddy.backend.entities.user.PrivacyPolicy;
 import ru.combuddy.backend.entities.user.UserInfo;
 import ru.combuddy.backend.exceptions.files.FIleWeightException;
 import ru.combuddy.backend.exceptions.files.UnsupportedPictureException;
@@ -40,4 +42,25 @@ public interface UserInfoService {
             UserNotExistsException,
             UnsupportedPictureException,
             FIleWeightException;
+
+    void setPrivacyPolicy(PrivacyPolicyInfo privacyPolicyInfo, String username)
+            throws UserNotExistsException;
+
+    void setDefaultPrivacyPolicy(String username)
+            throws UserNotExistsException;
+
+    static PrivacyPolicyInfo getDefaultPrivacyPolicyInfo() {
+        return new PrivacyPolicyInfo(
+                PrivacyPolicy.RegisteredDateAccessLevel.EVERYBODY,
+                PrivacyPolicy.SubscriptionsAccessLevel.EVERYBODY
+        );
+    }
+
+    static void setPrivacyPolicyToDefault(PrivacyPolicy privacyPolicy) {
+        var defaultPrivacyPolicyInfo = getDefaultPrivacyPolicyInfo();
+        privacyPolicy.setSubscriptionsAccessLevel(defaultPrivacyPolicyInfo.getSubscriptionsAccessLevel());
+        privacyPolicy.setRegisteredDateAccessLevel(defaultPrivacyPolicyInfo.getRegisteredDateAccessLevel());
+    }
+
+    PrivacyPolicyInfo getPrivacyPolicyInfo(String username) throws UserNotExistsException;
 }

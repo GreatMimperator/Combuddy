@@ -12,9 +12,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.combuddy.backend.controllers.user.models.PrivacyPolicyInfo;
 import ru.combuddy.backend.controllers.user.models.UserProfileInfo;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
+import ru.combuddy.backend.entities.user.PrivacyPolicy;
 import ru.combuddy.backend.entities.user.UserInfo;
 import ru.combuddy.backend.queries.user.UserInfoControllerQueries;
 import ru.combuddy.backend.util.ImageConverter;
@@ -105,10 +107,38 @@ public class UserInfoControllerTest {
         assertArrayEquals(expectedImageContent, thumbnailResultContent);
     }
 
+    @Test
+    public void setGetSetDefaultPrivacyPolicyTest() throws Exception {
+        var username = RANDOM_USER_USERNAME;
+        var accessToken = loginPreconfigured(mockMvc, username);
+        userInfoService.setDefaultPrivacyPolicy(username);
+        var privacyPolicyInfo = new PrivacyPolicyInfo(
+                PrivacyPolicy.RegisteredDateAccessLevel.NOBODY,
+                PrivacyPolicy.SubscriptionsAccessLevel.NOBODY
+        );
+        userInfoControllerQueries.setPrivacyPolicy(privacyPolicyInfo, accessToken)
+                .andExpect(status().isNoContent());
+        assert privacyPolicyInfo.equals(userInfoService.getPrivacyPolicyInfo(username));
+        var gotPrivacyPolicyJson = userInfoControllerQueries.getPrivacyPolicy(accessToken)
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        var gotPrivacyPolicyInfo = jsonToPrivacyPolicyInfo(gotPrivacyPolicyJson);
+        assert gotPrivacyPolicyInfo.equals(privacyPolicyInfo);
+        userInfoControllerQueries.setPrivacyPolicyToDefault(accessToken)
+                .andExpect(status().isNoContent());
+        assert UserInfoService.getDefaultPrivacyPolicyInfo().equals(userInfoService.getPrivacyPolicyInfo(username));
+    }
+
     public static UserProfileInfo jsonToUserProfileInfo(String usernamesListJson) throws Exception {
         var mapper = new ObjectMapper();
         mapper.registerModule(new Jdk8Module());
         return mapper.readValue(usernamesListJson, UserProfileInfo.class);
+    }
+
+    public static PrivacyPolicyInfo jsonToPrivacyPolicyInfo(String privacyPolicyInfoJson) throws Exception {
+        var mapper = new ObjectMapper();
+        mapper.registerModule(new Jdk8Module());
+        return mapper.readValue(privacyPolicyInfoJson, PrivacyPolicyInfo.class);
     }
 }
 

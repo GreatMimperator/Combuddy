@@ -105,10 +105,10 @@ public class PostControllerTest {
         expectedPostInfo.setBody("Here we go again, walking like barbie Ken");
         expectedPostInfo.setState(Post.State.HIDDEN);
         expectedPostInfo.setTags(List.of("movie", "art"));
-        expectedPostInfo.setPostContacts(Optional.of(List.of(new BaseContactInfo(VK, "secret_club"))));
+        expectedPostInfo.setPostContacts(List.of(new BaseContactInfo(VK, "secret_club")));
         var newUserContact = new BaseContactInfo(VK, "old_daddy");
         userContactService.add(username, newUserContact.getContactType(), newUserContact.getValue());
-        expectedPostInfo.setUserContacts(Optional.of(List.of(newUserContact)));
+        expectedPostInfo.setUserContacts(List.of(newUserContact));
         postControllerQueries.updateTitle(postId,
                         expectedPostInfo.getTitle(),
                         accessToken)
@@ -126,11 +126,11 @@ public class PostControllerTest {
                         accessToken)
                 .andExpect(status().isNoContent());
         postControllerQueries.updatePostContacts(postId,
-                        new ContactList(expectedPostInfo.getPostContacts().get()),
+                        new ContactList(expectedPostInfo.getPostContacts()),
                         accessToken)
                 .andExpect(status().isNoContent());
         postControllerQueries.updateUserContacts(postId,
-                        new ContactList(expectedPostInfo.getUserContacts().get()),
+                        new ContactList(expectedPostInfo.getUserContacts()),
                         accessToken)
                 .andExpect(status().isNoContent());
         var postInfo = postService.getPostInfo(postId, username);
@@ -162,7 +162,7 @@ public class PostControllerTest {
         var n = 3;
         var postIdsNPagesSizeList = new LinkedList<Long>();
         var templateCreationData = commonPost(userUsername);
-        templateCreationData.setUserContacts(Optional.empty());
+        templateCreationData.setUserContacts(null);
         for (int pageIndex = 0; pageIndex < n; pageIndex++) {
             for (int i = 0; i < answerPageSize; i++) {
                 var createdPost = postService.create(templateCreationData, userUsername);
@@ -208,7 +208,7 @@ public class PostControllerTest {
         var answerPageSize = serviceConstants.getPostsPerPage();
         var expectedHomePostIds = new LinkedList<Long>();
         var templateCreationData = commonPost(moderatorUsername);
-        templateCreationData.setUserContacts(Optional.empty());
+        templateCreationData.setUserContacts(null);
         // black list
         var aggressorUsername = RANDOM_USER_USERNAME;
         blackListService.add(aggressorUsername, moderatorUsername);
@@ -249,7 +249,7 @@ public class PostControllerTest {
         var answerPageSize = serviceConstants.getPostsPerPage();
         var expectedSubscriptionPostIds = new LinkedList<Long>();
         var templateCreationData = commonPost(moderatorUsername);
-        templateCreationData.setUserContacts(Optional.empty());
+        templateCreationData.setUserContacts(null);
         // sub to blacklisted - shown if sub
         var aggressorUsername = RANDOM_USER_USERNAME;
         blackListService.add(aggressorUsername, moderatorUsername);
@@ -285,7 +285,7 @@ public class PostControllerTest {
         var answerPageSize = serviceConstants.getPostsPerPage();
         var expectedFavouritePostIds = new LinkedList<Long>();
         var templateCreationData = commonPost(moderatorUsername);
-        templateCreationData.setUserContacts(Optional.empty());
+        templateCreationData.setUserContacts(null);
         // sub to blacklisted
         var aggressorUsername = RANDOM_USER_USERNAME;
         blackListService.add(aggressorUsername, moderatorUsername);
@@ -334,8 +334,8 @@ public class PostControllerTest {
         builder.body("I want to listen lil peep music hugging with somebody :(");
         builder.state(Post.State.POSTED);
         builder.tags(List.of("music", "lil-peep"));
-        builder.postContacts(Optional.of(postContacts));
-        builder.userContacts(Optional.of(userContacts));
+        builder.postContacts(postContacts);
+        builder.userContacts(userContacts);
         return builder.build();
     }
 
@@ -349,8 +349,7 @@ public class PostControllerTest {
         builder.body("I want to listen lil peep music hugging with somebody :(");
         builder.state(Post.State.POSTED);
         builder.tags(List.of("music", "lil-peep"));
-        builder.postContacts(Optional.of(postContacts));
-        builder.userContacts(Optional.empty());
+        builder.postContacts(postContacts);
         return builder.build();
     }
 
@@ -364,11 +363,11 @@ public class PostControllerTest {
         var postContactsEqual = (postInfo.getPostContacts().isEmpty() && expectedPostInfo.getPostContacts().isEmpty()) ||
                 listEqualsIgnoreOrder(
                         postInfo.getPostContacts(),
-                        expectedPostInfo.getPostContacts().get());
+                        expectedPostInfo.getPostContacts());
         var postUserContactsEqual = (postInfo.getPostUserContacts().isEmpty() && expectedPostInfo.getUserContacts().isEmpty()) ||
                 listEqualsIgnoreOrder(
                         postInfo.getPostUserContacts(),
-                        expectedPostInfo.getUserContacts().get());
+                        expectedPostInfo.getUserContacts());
         assert tagNamesEqual;
         assert titleEquals;
         assert bodyEquals;
