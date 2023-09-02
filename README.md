@@ -24,6 +24,17 @@ cd Combuddy
 docker-compose up -d
 ```
 
+При рабочем сценарии следует поменять монтаж точки данных базы на локальное хранилище (но сперва этот путь следует создать):
+
+```yml
+volumes:
+  db-data:
+    driver: local
+    driver_opts:
+      device: ${HOME}/db-data
+      o: bind
+      type: local
+```
 
 ## Система Аутентификации
 
