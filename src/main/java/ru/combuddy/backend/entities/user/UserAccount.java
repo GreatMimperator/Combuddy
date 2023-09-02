@@ -15,8 +15,8 @@ import ru.combuddy.backend.entities.messaging.PublicMessage;
 import ru.combuddy.backend.entities.post.FavoritePost;
 import ru.combuddy.backend.entities.post.Post;
 import ru.combuddy.backend.entities.post.tag.UserHomeTag;
+import ru.combuddy.backend.security.RoleName;
 import ru.combuddy.backend.security.entities.UserBaseAuth;
-import ru.combuddy.backend.security.entities.Role;
 
 import java.util.List;
 
@@ -46,8 +46,9 @@ public class UserAccount {
     @Column(nullable = false)
     private Boolean frozen = false;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Role role;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RoleName roleName;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "userAccount")
     private UserInfo userInfo;
@@ -112,7 +113,7 @@ public class UserAccount {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", frozen=" + frozen +
-                ", role=" + role.getName() +
+                ", role=" + roleName.name() +
                 '}';
     }
 }

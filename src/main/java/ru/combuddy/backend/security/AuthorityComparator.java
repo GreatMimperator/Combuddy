@@ -4,7 +4,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.exceptions.user.InvalidRoleNameException;
-import ru.combuddy.backend.security.entities.Role.RoleName;
 
 import java.util.Comparator;
 
@@ -25,13 +24,13 @@ public class AuthorityComparator implements Comparator<RoleName> {
         return compare(first, secondRoleName) >= 0;
     }
     public int compare(UserAccount first, RoleName secondRoleName) {
-        var firstRoleName = first.getRole().getName();
+        var firstRoleName = first.getRoleName();
         return compare(firstRoleName, secondRoleName);
     }
 
     public int compare(UserAccount first, UserAccount second) {
-        var firstRoleName = first.getRole().getName();
-        var secondRoleName = second.getRole().getName();
+        var firstRoleName = first.getRoleName();
+        var secondRoleName = second.getRoleName();
         return compare(firstRoleName, secondRoleName);
     }
 

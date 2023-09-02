@@ -9,8 +9,8 @@ import ru.combuddy.backend.security.AuthorityComparator;
 import ru.combuddy.backend.security.verifiers.PermissionVerifier;
 
 import static ru.combuddy.backend.entities.user.PrivacyPolicy.RegisteredDateAccessLevel.EVERYBODY;
-import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_MODERATOR;
-import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_USER;
+import static ru.combuddy.backend.security.RoleName.ROLE_MODERATOR;
+import static ru.combuddy.backend.security.RoleName.ROLE_USER;
 
 @Component
 @AllArgsConstructor

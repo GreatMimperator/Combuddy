@@ -15,15 +15,15 @@ Combuddy (Company buddy) - это приложение для поиска ед�
 ![image](https://github.com/GreatMimperator/Combuddy/assets/93261336/54e3c383-d533-4314-b7b2-2f739c539eed)
 
 
-## Сборка
+## Сборка и запуск (Docker)
+
 ```bash
 git clone https://github.com/GreatMimperator/Combuddy.git
 cd Combuddy
-chmod +x gradlew
-./gradlew bootRun --args='--spring.profiles.active=dev'
+./gradlew bootJar
+docker-compose up -d
 ```
 
-Профиля два: **dev** и **prod**. Перед запуском следует в ```application-{профиль}.properties``` поместить актуальные данные базы данных, а также вызвать ```CREATE EXTENSION pgcrypto``` в **psql** для работы метода генерации соли
 
 ## Система Аутентификации
 

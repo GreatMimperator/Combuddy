@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ru.combuddy.backend.controllers.ServiceConstants;
-import ru.combuddy.backend.controllers.user.projections.account.RoleOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.projections.account.UsernameOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
@@ -21,8 +20,7 @@ import ru.combuddy.backend.exceptions.user.UserAlreadyExistsException;
 import ru.combuddy.backend.exceptions.user.UserNotExistsException;
 import ru.combuddy.backend.repositories.user.UserAccountRepository;
 import ru.combuddy.backend.security.AuthorityComparator;
-import ru.combuddy.backend.security.entities.Role;
-import ru.combuddy.backend.security.repositories.RoleRepository;
+import ru.combuddy.backend.security.RoleName;
 import ru.combuddy.backend.security.verifiers.users.UsersDeleteVerifier;
 import ru.combuddy.backend.security.verifiers.users.UsersFreezeVerifier;
 import ru.combuddy.backend.security.verifiers.users.role.RoleDecreaseVerifier;
@@ -31,7 +29,7 @@ import ru.combuddy.backend.security.verifiers.users.role.RoleIncreaseVerifier;
 import java.util.*;
 
 import static ru.combuddy.backend.controllers.ServiceConstants.checkPageNumber;
-import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_USER;
+import static ru.combuddy.backend.security.RoleName.ROLE_USER;
 
 @Service
 @Transactional
@@ -39,7 +37,6 @@ import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_USER;
 public class UserAccountServiceImpl implements UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
-    private final RoleRepository roleRepository;
 
     private final UsersDeleteVerifier deleteVerifier;
     private final UsersFreezeVerifier freezeVerifier;
@@ -57,8 +54,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         }
         var userAccount = new UserAccount();
         userAccount.setUsername(username);
-        var role = roleRepository.findByName(ROLE_USER).get();
-        userAccount.setRole(role);
+        userAccount.setRoleName(ROLE_USER);
         var userInfo = new UserInfo(userAccount);
         userAccount.setUserInfo(userInfo);
         var privacyPolicy = new PrivacyPolicy(userAccount);
@@ -91,13 +87,6 @@ public class UserAccountServiceImpl implements UserAccountService {
         return foundUser.get();
     }
 
-
-    @Override
-    public Optional<Role> findRoleByUsername(String username) {
-        return userAccountRepository.findRoleByUsername(username)
-                .map(RoleOnlyUserAccountProjection::getRole);
-    }
-
     @Override
     public boolean delete(String username) {
         var deletedCount = userAccountRepository.deleteByUsername(username);
@@ -117,6 +106,7 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Override
     public boolean isFrozen(String username) throws UserNotExistsException {
         var foundFrozen = userAccountRepository.findFrozenByUsername(username);
+        System.err.println(username);
         if (foundFrozen.isEmpty()) {
             throw new UserNotExistsException("User not exists, so can not check is account frozen");
         }
@@ -124,8 +114,8 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
     @Override
-    public void replaceRole(UserAccount receiver, Role.RoleName roleName) {
-        receiver.setRole(roleRepository.findByName(roleName).get());
+    public void replaceRoleName(UserAccount receiver, RoleName roleName) {
+        receiver.setRoleName(roleName);
         userAccountRepository.save(receiver);
     }
 
@@ -171,26 +161,26 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
     @Override
-    public void setRole(String roleStringName,
+    public void setRoleName(String roleStringName,
                         String receiverUsername,
                         String issuerUsername)
             throws UserNotExistsException,
             InvalidRoleNameException,
             RoleSetNotPermittedException {
-        var roleNameToSet = Role.RoleName.convertToRoleName(roleStringName);
+        var roleToSet = RoleName.convertToRoleName(roleStringName);
         var receiver = this.getByUsername(receiverUsername);
         var issuer = this.getByUsername(issuerUsername);
-        if (authorityComparator.compare(receiver, roleNameToSet) < 0) {
-            var verifyInfo = new RoleIncreaseVerifier.VerifyInfo(receiver, roleNameToSet);
+        if (authorityComparator.compare(receiver, roleToSet) < 0) {
+            var verifyInfo = new RoleIncreaseVerifier.VerifyInfo(receiver, roleToSet);
             if (roleIncreaseVerifier.verify(issuer, verifyInfo)) {
-                this.replaceRole(receiver, roleNameToSet);
+                this.replaceRoleName(receiver, roleToSet);
             } else {
                 throw new RoleSetNotPermittedException("You can not increase the role for this account");
             }
         } else {
-            var verifyInfo = new RoleDecreaseVerifier.VerifyInfo(receiver, roleNameToSet);
+            var verifyInfo = new RoleDecreaseVerifier.VerifyInfo(receiver, roleToSet);
             if (roleDecreaseVerifier.verify(issuer, verifyInfo)) {
-                this.replaceRole(receiver, roleNameToSet);
+                this.replaceRoleName(receiver, roleToSet);
             } else {
                 throw new RoleSetNotPermittedException("You can not decrease the role for this account");
             }

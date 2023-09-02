@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    environment:
+        SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/dev
+        SPRING_DATASOURCE_USERNAME: combuddy
+        SPRING_DATASOURCE_PASSWORD: combuddy
+    ports:
+      - "0.0.0.0:9000:9000"
+  db:
+    image: postgres:15.4
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    environment:
+      POSTGRES_PASSWORD: combuddy
+      POSTGRES_USER: combuddy
+      POSTGRES_DB: dev
+
+volumes:
+  db-data:
+    driver: local
+    driver_opts:
+      device: /home/imperator/db-data
+      o: bind
+      type: local

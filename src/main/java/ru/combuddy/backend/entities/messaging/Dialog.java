@@ -10,6 +10,7 @@ import ru.combuddy.backend.entities.user.UserAccount;
 import java.util.List;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"first_participant_id", "second_participant_id", "post_id"}))
 @Data
 @EqualsAndHashCode(of = "id")
 public class Dialog {
@@ -28,13 +29,13 @@ public class Dialog {
     private UserAccount secondParticipant;
 
     @NotNull
-    @Column(nullable = false)
-    private Boolean archived = false;
-
-    @NotNull
     @ManyToOne
     @JoinColumn(name = "post_id")
     private Post topicPost;
+
+    @NotNull
+    @Column(nullable = false)
+    private Boolean archived = false;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "dialog")
     private List<Message> messages;

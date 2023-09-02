@@ -1,15 +1,9 @@
-INSERT INTO role(name)
+INSERT INTO user_account(username, role_name, frozen)
 VALUES
-    ('ROLE_USER'),
-    ('ROLE_MODERATOR'),
-    ('ROLE_MAIN_MODERATOR');
-
-INSERT INTO user_account(username, role_id, frozen)
-VALUES
-    ('random_user', 1, false),
-    ('moderator', 2, false),
-    ('main_moderator', 3, false),
-    ('another_moderator', 2, false);
+    ('random_user', 'ROLE_USER', false),
+    ('moderator', 'ROLE_MODERATOR', false),
+    ('main_moderator', 'ROLE_MAIN_MODERATOR', false),
+    ('another_moderator', 'ROLE_MODERATOR', false);
 
 INSERT INTO privacy_policy(user_id, registered_date_access_level, subscriptions_access_level)
 VALUES

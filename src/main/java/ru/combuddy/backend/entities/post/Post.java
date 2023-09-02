@@ -60,7 +60,7 @@ public class Post {
                 }
             }
             throw new IllegalPostStateException(
-                    MessageFormat.format("Role name {0} does not exist as enum value",
+                    MessageFormat.format("RoleName name {0} does not exist as enum value",
                             stateAsString));
         }
     }

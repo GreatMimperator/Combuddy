@@ -20,8 +20,8 @@ import ru.combuddy.backend.exceptions.user.authentication.AccountIsFrozenExcepti
 import ru.combuddy.backend.exceptions.user.authentication.CompromisedRefreshTokenException;
 import ru.combuddy.backend.exceptions.user.authentication.RefreshTokenNotFoundException;
 import ru.combuddy.backend.exceptions.user.authentication.UserAuthenticationException;
+import ru.combuddy.backend.security.RoleName;
 import ru.combuddy.backend.security.TokenService;
-import ru.combuddy.backend.security.entities.Role;
 import ru.combuddy.backend.security.entities.UserBaseAuth;
 import ru.combuddy.backend.security.repositories.UserBaseAuthRepository;
 import ru.combuddy.backend.security.repositories.WorkingRefreshTokenRepository;
@@ -54,12 +54,12 @@ public class UserBaseAuthServiceImpl implements UserBaseAuthService {
         var userBaseAuth = new UserBaseAuth(null, userAccount, passwordEncoder.encode(password));
         authenticationRepository.save(userBaseAuth);
         userAccount.setBaseAuth(userBaseAuth);
-        return login(userAccount.getUsername(), userAccount.getRole().getName(), password); // AuthenticationException risk. Creation will be rolled back if thrown
+        return login(userAccount.getUsername(), userAccount.getRoleName(), password); // AuthenticationException risk. Creation will be rolled back if thrown
     }
 
     @Override
     public LoginResponse login(String username,
-                               Role.RoleName roleName,
+                               RoleName role,
                                String password)
             throws AccountIsFrozenException,
             UserAuthenticationException {
@@ -71,7 +71,7 @@ public class UserBaseAuthServiceImpl implements UserBaseAuthService {
         } catch (AuthenticationException e) {
             throw new UserAuthenticationException("Login has failed", e);
         }
-        return generateLoginResponse(username, roleName);
+        return generateLoginResponse(username, role);
     }
 
     @Override
@@ -80,11 +80,11 @@ public class UserBaseAuthServiceImpl implements UserBaseAuthService {
             AccountIsFrozenException,
             UserAuthenticationException {
         var account = userAccountService.getByUsername(username);
-        return this.login(account.getUsername(), account.getRole().getName(), password);
+        return this.login(account.getUsername(), account.getRoleName(), password);
     }
 
     @Override
-    public LoginResponse generateLoginResponse(String username, Role.RoleName roleName) {
+    public LoginResponse generateLoginResponse(String username, RoleName roleName) {
         var authorities = List.of(new SimpleGrantedAuthority(roleName.name()));
         var accessToken = tokenService.generateAccessToken(username, authorities);
         var refreshToken = tokenService.generateRefreshToken(username);
@@ -116,12 +116,12 @@ public class UserBaseAuthServiceImpl implements UserBaseAuthService {
             workingRefreshTokenRepository.delete(workingRefreshToken);
             throw new CompromisedRefreshTokenException("Given refresh token is not equal to latest refresh token");
         }
-        var foundRefreshedRole = userAccountService.findRoleByUsername(username);
-        if (foundRefreshedRole.isEmpty()) {
-            throw new UserNotExistsException("User role is not found - so user does not exist");
+        var foundUser = userAccountService.findByUsername(username);
+        if (foundUser.isEmpty()) {
+            throw new UserNotExistsException("User does not exist");
         }
-        var refreshedRole = foundRefreshedRole.get();
-        return this.generateLoginResponse(username, refreshedRole.getName());
+        var refreshedRoleName = foundUser.get().getRoleName();
+        return this.generateLoginResponse(username, refreshedRoleName);
     }
 
     @Override

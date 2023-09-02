@@ -51,10 +51,10 @@ public class UserAccountController {
     @PutMapping("/role/set/{roleStringName}/to/{receiverUsername}")
     @PreAuthorize("@authorityComparator.overOrEqual(authentication, 'ROLE_MODERATOR')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void setRole(@PathVariable String roleStringName,
+    public void setRoleName(@PathVariable String roleStringName,
                         @PathVariable String receiverUsername,
                         Authentication authentication) {
         String issuerUsername = getUsername(authentication);
-        userAccountService.setRole(roleStringName, receiverUsername, issuerUsername);
+        userAccountService.setRoleName(roleStringName, receiverUsername, issuerUsername);
     }
 }

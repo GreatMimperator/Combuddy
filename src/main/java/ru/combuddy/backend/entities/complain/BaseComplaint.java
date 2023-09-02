@@ -33,7 +33,7 @@ public class BaseComplaint {
     private String text;
 
     @NotNull
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private State state;
 

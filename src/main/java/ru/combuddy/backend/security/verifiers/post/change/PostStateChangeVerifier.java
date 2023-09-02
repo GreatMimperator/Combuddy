@@ -7,9 +7,10 @@ import org.springframework.stereotype.Component;
 import ru.combuddy.backend.entities.post.Post;
 import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.security.AuthorityComparator;
+import ru.combuddy.backend.security.RoleName;
 import ru.combuddy.backend.security.verifiers.PermissionVerifier;
 
-import static ru.combuddy.backend.security.entities.Role.RoleName.*;
+import static ru.combuddy.backend.security.RoleName.ROLE_MODERATOR;
 
 @Component
 @AllArgsConstructor

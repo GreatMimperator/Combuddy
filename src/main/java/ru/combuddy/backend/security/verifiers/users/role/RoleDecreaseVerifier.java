@@ -6,10 +6,10 @@ import lombok.Getter;
 import org.springframework.stereotype.Component;
 import ru.combuddy.backend.entities.user.UserAccount;
 import ru.combuddy.backend.security.AuthorityComparator;
-import ru.combuddy.backend.security.entities.Role;
+import ru.combuddy.backend.security.RoleName;
 import ru.combuddy.backend.security.verifiers.PermissionVerifier;
 
-import static ru.combuddy.backend.security.entities.Role.RoleName.*;
+import static ru.combuddy.backend.security.RoleName.ROLE_MAIN_MODERATOR;
 
 @Component
 @AllArgsConstructor
@@ -21,9 +21,9 @@ public class RoleDecreaseVerifier implements PermissionVerifier<RoleDecreaseVeri
     public boolean verify(UserAccount asker, VerifyInfo target) {
         boolean checksSelf = asker.equals(target.userAccount);
         var isAskerMainModeratorOrOver = authorityComparator.compare(asker, ROLE_MAIN_MODERATOR) >= 0;
-        var isAskerOverTargetRole = authorityComparator.compare(asker, target.issuedRole) > 0;
-        boolean enoughAuthority = isAskerMainModeratorOrOver && isAskerOverTargetRole;
-        var isDecreaseOrEq = authorityComparator.compare(target.issuedRole, asker.getRole().getName()) <= 0;
+        var isAskerOverTargetRoleName = authorityComparator.compare(asker, target.issuedRoleName) > 0;
+        boolean enoughAuthority = isAskerMainModeratorOrOver && isAskerOverTargetRoleName;
+        var isDecreaseOrEq = authorityComparator.compare(target.issuedRoleName, asker.getRoleName()) <= 0;
         return !checksSelf && enoughAuthority && isDecreaseOrEq;
     }
 
@@ -31,6 +31,6 @@ public class RoleDecreaseVerifier implements PermissionVerifier<RoleDecreaseVeri
     @AllArgsConstructor
     public static class VerifyInfo {
         final private UserAccount userAccount;
-        final private Role.RoleName issuedRole;
+        final private RoleName issuedRoleName;
     }
 }

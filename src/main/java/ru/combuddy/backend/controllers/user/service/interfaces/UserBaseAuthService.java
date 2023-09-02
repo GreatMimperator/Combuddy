@@ -5,7 +5,7 @@ import ru.combuddy.backend.controllers.user.models.LoginResponse;
 import ru.combuddy.backend.exceptions.user.UserAlreadyExistsException;
 import ru.combuddy.backend.exceptions.user.UserNotExistsException;
 import ru.combuddy.backend.exceptions.user.authentication.*;
-import ru.combuddy.backend.security.entities.Role;
+import ru.combuddy.backend.security.RoleName;
 
 public interface UserBaseAuthService {
     LoginResponse create(String username, String password)
@@ -15,7 +15,7 @@ public interface UserBaseAuthService {
             UserAuthenticationException;
 
     LoginResponse login(String username,
-                        Role.RoleName roleName,
+                        RoleName role,
                         String password)
         throws AccountIsFrozenException,
             UserAuthenticationException;
@@ -25,7 +25,7 @@ public interface UserBaseAuthService {
             AccountIsFrozenException,
             UserAuthenticationException;
 
-    LoginResponse generateLoginResponse(String username, Role.RoleName roleName);
+    LoginResponse generateLoginResponse(String username, RoleName roleName);
 
     LoginResponse registerUser(String username, String password)
         throws UserAlreadyExistsException,

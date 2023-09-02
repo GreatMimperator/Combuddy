@@ -3,7 +3,6 @@ package ru.combuddy.backend.repositories.user;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.domain.Pageable;
 import ru.combuddy.backend.controllers.user.projections.account.FrozenOnlyUserAccountProjection;
-import ru.combuddy.backend.controllers.user.projections.account.RoleOnlyUserAccountProjection;
 import ru.combuddy.backend.controllers.user.projections.account.UsernameOnlyUserAccountProjection;
 import ru.combuddy.backend.entities.user.UserAccount;
 
@@ -20,6 +19,4 @@ public interface UserAccountRepository extends CrudRepository<UserAccount, Long>
     List<UsernameOnlyUserAccountProjection> findByUsernameStartingWith(String usernameBeginPart, Pageable pageable);
 
     Optional<FrozenOnlyUserAccountProjection> findFrozenByUsername(String username);
-
-    Optional<RoleOnlyUserAccountProjection> findRoleByUsername(String username);
 }

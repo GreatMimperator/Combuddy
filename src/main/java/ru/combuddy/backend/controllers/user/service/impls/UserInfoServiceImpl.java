@@ -10,7 +10,6 @@ import ru.combuddy.backend.controllers.user.models.UserProfileInfo;
 import ru.combuddy.backend.controllers.user.service.interfaces.SubscriptionService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserAccountService;
 import ru.combuddy.backend.controllers.user.service.interfaces.UserInfoService;
-import ru.combuddy.backend.entities.user.PrivacyPolicy;
 import ru.combuddy.backend.entities.user.UserInfo;
 import ru.combuddy.backend.exceptions.files.FIleWeightException;
 import ru.combuddy.backend.exceptions.files.UnsupportedPictureException;
@@ -95,7 +94,7 @@ public class UserInfoServiceImpl implements UserInfoService {
         var askerAccount = userAccountService.getByUsername(askerUsername);
         var privacyPolicy = privacyPolicyRepository
                 .findByUserAccountId(targetAccount.getId()).get();
-        var roleName = targetAccount.getRole().getName();
+        var roleName = targetAccount.getRoleName();
         var baseContacts = userContactService.toBaseContacts(targetAccount.getContacts());
         var builder = UserProfileInfo.builder()
                 .username(targetUsername)

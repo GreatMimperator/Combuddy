@@ -61,7 +61,7 @@ public class UserInfoControllerTest {
         var randomUser = userAccountService.findByUsername(userUsername).get();
         assertEquals(gotProfileInfo.getUsername(), randomUser.getUsername());
         assertEquals(gotProfileInfo.isFrozen(), randomUser.getFrozen());
-        assertEquals(gotProfileInfo.getRole(), randomUser.getRole().getName().name());
+        assertEquals(gotProfileInfo.getRole(), randomUser.getRoleName().name());
         assertEquals(gotProfileInfo.getRegisteredDate().get().getTimeInMillis(),
                 randomUser.getUserInfo().getRegisteredDate().getTimeInMillis());
         assert gotProfileInfo.getSubscriptions().isEmpty();

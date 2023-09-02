@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import ru.combuddy.backend.controllers.user.models.LoginResponse;
 import ru.combuddy.backend.queries.user.AuthControllerQueries;
-import ru.combuddy.backend.security.entities.Role;
+import ru.combuddy.backend.security.RoleName;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -69,7 +69,7 @@ public class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         var loginResponse = jsonToLoginResponse(loginResponseJson);
-        assertLoginResponse(loginResponse, username, Role.RoleName.ROLE_MODERATOR);
+        assertLoginResponse(loginResponse, username, RoleName.ROLE_MODERATOR);
     }
 
     @Test
@@ -80,12 +80,12 @@ public class AuthControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         var loginResponse = jsonToLoginResponse(loginResponseJson);
-        assertLoginResponse(loginResponse, username, Role.RoleName.ROLE_USER);
+        assertLoginResponse(loginResponse, username, RoleName.ROLE_USER);
         loginResponseJson = authControllerQueries.login(username, password)
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         loginResponse = jsonToLoginResponse(loginResponseJson);
-        assertLoginResponse(loginResponse, username, Role.RoleName.ROLE_USER);
+        assertLoginResponse(loginResponse, username, RoleName.ROLE_USER);
     }
 
     @Test
@@ -97,7 +97,7 @@ public class AuthControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse().getContentAsString();
         var loginResponse = jsonToLoginResponse(loginResponseJson);
-        assertLoginResponse(loginResponse, username, Role.RoleName.ROLE_USER);
+        assertLoginResponse(loginResponse, username, RoleName.ROLE_USER);
     }
 
     @Test
@@ -110,7 +110,7 @@ public class AuthControllerTest {
     }
 
 
-    private void assertLoginResponse(LoginResponse loginResponse, String username, Role.RoleName roleName) {
+    private void assertLoginResponse(LoginResponse loginResponse, String username, RoleName roleName) {
         var accessToken = jwtDecoder.decode(loginResponse.getAccessToken());
         assert accessToken.getSubject().equals(username);
         assert accessToken.getClaim("scope").equals(roleName.name());

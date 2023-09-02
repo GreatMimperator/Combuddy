@@ -6,7 +6,6 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import ru.combuddy.backend.security.entities.Role;
 
 import java.util.Collection;
 import java.util.List;
@@ -18,7 +17,7 @@ public class BaseAuthUserDetails implements UserDetails {
 
     private String username;
     private String password;
-    private Role.RoleName roleName;
+    private RoleName roleName;
     private boolean isLocked;
 
     @Override

@@ -25,7 +25,7 @@ import java.util.LinkedList;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.combuddy.backend.Util.listEqualsIgnoreOrder;
 import static ru.combuddy.backend.controllers.user.AuthControllerTest.*;
-import static ru.combuddy.backend.security.entities.Role.RoleName.ROLE_MODERATOR;
+import static ru.combuddy.backend.security.RoleName.ROLE_MODERATOR;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -111,7 +111,7 @@ public class UserAccountControllerTest {
                         userUsername,
                         mainModeratorAccessToken)
                 .andExpect(status().isNoContent());
-        assert userAccountService.findByUsername(userUsername).get().getRole().getName() == ROLE_MODERATOR;
+        assert userAccountService.findByUsername(userUsername).get().getRoleName() == ROLE_MODERATOR;
     }
 
     public static UsernamesList jsonToUsernamesList(String usernamesListJson) throws Exception {

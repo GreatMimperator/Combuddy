@@ -7,7 +7,7 @@ import ru.combuddy.backend.exceptions.permission.user.RoleSetNotPermittedExcepti
 import ru.combuddy.backend.exceptions.user.InvalidRoleNameException;
 import ru.combuddy.backend.exceptions.user.UserAlreadyExistsException;
 import ru.combuddy.backend.exceptions.user.UserNotExistsException;
-import ru.combuddy.backend.security.entities.Role;
+import ru.combuddy.backend.security.RoleName;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,15 +23,13 @@ public interface UserAccountService {
 
     UserAccount getByUsername(String username) throws UserNotExistsException;
 
-    Optional<Role> findRoleByUsername(String username);
-
     boolean delete(String username);
 
     List<String> findUsernamesStartedWith(String usernameBeginPart, int pageNumberSinceOne) throws IllegalPageNumberException;
 
     boolean isFrozen(String username) throws UserNotExistsException;
 
-    void replaceRole(UserAccount receiver, Role.RoleName roleName);
+    void replaceRoleName(UserAccount receiver, RoleName roleName);
 
     void freeze(String suspectUsername, String suspenderUsername)
             throws UserNotExistsException,
@@ -45,7 +43,7 @@ public interface UserAccountService {
             throws UserNotExistsException,
             FreezeStateSetNotPermittedException;
 
-    void setRole(String roleStringName,
+    void setRoleName(String roleStringName,
                  String receiverUsername,
                  String issuerUsername)
             throws UserNotExistsException,

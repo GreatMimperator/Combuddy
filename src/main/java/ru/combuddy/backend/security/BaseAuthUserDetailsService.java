@@ -26,7 +26,7 @@ public class BaseAuthUserDetailsService implements UserDetailsService {
                 .username(username)
                 .password(userAccount.getBaseAuth().getEncryptedPassword())
                 .isLocked(userAccount.getFrozen())
-                .roleName(userAccount.getRole().getName())
+                .roleName(userAccount.getRoleName())
                 .build();
     }
 }
