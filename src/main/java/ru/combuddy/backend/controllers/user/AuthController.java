@@ -19,12 +19,12 @@ public class AuthController {
 
     @PostMapping("/register/{username}")
     @ResponseStatus(HttpStatus.CREATED)
-    public LoginResponse register(@PathVariable String username, @RequestParam String password) {
+    public LoginResponse register(@PathVariable String username, @RequestHeader("password") String password) {
         return userBaseAuthService.registerUser(username, password);
     }
 
     @PostMapping("/login/{username}")
-    public LoginResponse login(@PathVariable String username, @RequestParam String password) {
+    public LoginResponse login(@PathVariable String username, @RequestHeader("password") String password) {
         return userBaseAuthService.login(username, password);
     }
 

@@ -16,12 +16,12 @@ public class AuthControllerQueries {
 
     public ResultActions login(String username, String password) throws Exception {
         return this.mockMvc.perform(post("/api/v1/user/auth/login/{username}", username)
-                .queryParam("password", password));
+                .header("password", password));
     }
 
     public ResultActions register(String username, String password) throws Exception {
         return this.mockMvc.perform(post("/api/v1/user/auth/register/{username}", username)
-                .queryParam("password", password));
+                .header("password", password));
     }
 
     public ResultActions refreshToken(String refreshToken) throws Exception {
